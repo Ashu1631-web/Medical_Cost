@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ----------------------------
-# GLOBAL CSS (FINAL UI FIX)
+# GLOBAL CSS
 # ----------------------------
 st.markdown("""
 <style>
@@ -23,7 +23,7 @@ st.markdown("""
     color: white;
 }
 
-/* REMOVE TOP GAP */
+/* REMOVE GAP */
 .block-container {
     padding-top: 0rem;
 }
@@ -43,7 +43,6 @@ st.markdown("""
     border-radius: 10px;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(10px);
-    box-shadow: 0 0 15px rgba(0,255,255,0.2);
 }
 
 /* INPUT */
@@ -61,7 +60,6 @@ label {display:none;}
     color: black;
     border-radius: 8px;
     font-weight: bold;
-    width: 100%;
 }
 
 /* CARD */
@@ -78,23 +76,11 @@ label {display:none;}
     box-shadow: 0 0 15px #00ffff;
 }
 
-/* REMOVE BLUE FILTER BOX */
-[data-baseweb="select"] > div {
-    border: none !important;
-    box-shadow: none !important;
-}
-
-[data-baseweb="select"] *:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-/* TAG STYLE */
-[data-baseweb="tag"] {
-    background-color: rgba(0,255,255,0.2) !important;
-    color: white !important;
-    border: 1px solid #00ffff !important;
-    border-radius: 6px !important;
+/* TABLE STYLE */
+[data-testid="stDataFrame"] {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 10px;
 }
 
 /* SIDEBAR */
@@ -183,10 +169,22 @@ def dashboard():
 
     st.markdown('<div class="title">📊 Premium Dashboard</div>', unsafe_allow_html=True)
 
+    # PROJECT OVERVIEW
     st.markdown("""
-    ### 📘 Project Overview  
-    This project analyzes medical insurance expenses using filters and machine learning.
+    ### 📘 Project Overview
+
+    This project analyzes and predicts medical insurance expenses using machine learning.
+
+    **Features:**
+    - Dynamic filtering system
+    - Interactive charts
+    - ML prediction model
     """)
+
+    st.markdown("### 📊 Dataset Preview (Top 20 Rows)")
+
+    # PREMIUM TABLE
+    st.dataframe(df.head(20), use_container_width=True, height=300)
 
     st.markdown("---")
 
@@ -201,7 +199,7 @@ def dashboard():
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0, 40.0))
 
     if not gender or not smoker or not region:
-        st.warning("⚠️ Please select filters to view data")
+        st.warning("⚠️ Please select filters")
         return
 
     filtered_df = df[
@@ -215,9 +213,9 @@ def dashboard():
     # KPI
     col1, col2, col3 = st.columns(3)
 
-    col1.markdown(f'<div class="card">👥 Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
-    col2.markdown(f'<div class="card">💰 Avg Expense<br><h2>₹ {round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="card">📈 Max Expense<br><h2>₹ {round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
+    col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="card">Avg Expense<br><h2>₹ {round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="card">Max Expense<br><h2>₹ {round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
