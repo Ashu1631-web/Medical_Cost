@@ -1,97 +1,135 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
+import time
 
-st.set_page_config(page_title="Medical Insurance Cost Prediction", layout="wide")
+# ----------------------------
+# CONFIG
+# ----------------------------
+st.set_page_config(page_title="Pro Dashboard", layout="wide")
 
-# ===========================
-# SAFE FILE LOADER (NO ERROR)
-# ===========================
-def find_file(filename):
-    for root, dirs, files in os.walk("."):
-        if filename in files:
-            return os.path.join(root, filename)
-    return None
+# ----------------------------
+# SESSION STATE (LOGIN)
+# ----------------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
-csv_file = find_file("medical_insurance.csv")
-model_file = find_file("best_model.pkl")
+# ----------------------------
+# LOGIN PAGE
+# ----------------------------
+def login_page():
 
-if csv_file is None:
-    st.error("❌ medical_insurance.csv not found. Please upload it inside dataset folder.")
-    st.stop()
+    st.markdown("""
+        <style>
+        .big-title {
+            font-size:40px;
+            text-align:center;
+            font-weight:bold;
+            color:#4CAF50;
+        }
+        .login-box {
+            background-color:#111;
+            padding:30px;
+            border-radius:15px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-if model_file is None:
-    st.error("❌ best_model.pkl not found. Please upload it inside model folder.")
-    st.stop()
+    st.markdown('<p class="big-title">🔐 AI Insurance Dashboard</p>', unsafe_allow_html=True)
 
-df = pd.read_csv(csv_file)
-model = joblib.load(model_file)
+    st.write("")
 
-# Encode categorical columns
-df["sex"] = df["sex"].map({"male": 0, "female": 1})
-df["smoker"] = df["smoker"].map({"no": 0, "yes": 1})
-df["region"] = df["region"].map({
-    "southwest": 0,
-    "southeast": 1,
-    "northwest": 2,
-    "northeast": 3
-})
+    col1, col2, col3 = st.columns([1,2,1])
 
-st.title("💰 Medical Insurance Cost Prediction App")
-st.write("Enter details to predict insurance charges.")
+    with col2:
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
-# Sidebar Inputs
-st.sidebar.header("User Input Features")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
 
-age = st.sidebar.slider("Age", 18, 65, 25)
-sex = st.sidebar.selectbox("Gender", ["male", "female"])
-bmi = st.sidebar.slider("BMI", 15.0, 45.0, 25.0)
-children = st.sidebar.selectbox("Children", [0, 1, 2, 3, 4, 5])
-smoker = st.sidebar.selectbox("Smoker", ["yes", "no"])
-region = st.sidebar.selectbox("Region", ["southwest", "southeast", "northwest", "northeast"])
+        if st.button("Login"):
+            if username == "admin" and password == "1234":
+                st.success("Login Successful 🚀")
+                time.sleep(1)
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Invalid Credentials ❌")
 
-# Encode Inputs
-sex_val = 0 if sex == "male" else 1
-smoker_val = 1 if smoker == "yes" else 0
-region_val = {"southwest": 0, "southeast": 1, "northwest": 2, "northeast": 3}[region]
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# Prediction
-if st.sidebar.button("Predict Cost"):
-    input_data = np.array([[age, sex_val, bmi, children, smoker_val, region_val]])
-    prediction = model.predict(input_data)[0]
-    st.success(f"✅ Estimated Insurance Cost: ₹ {prediction:,.2f}")
+# ----------------------------
+# LOADING ANIMATION
+# ----------------------------
+def loading_animation():
+    with st.spinner("Loading Dashboard..."):
+        time.sleep(2)
 
-# ===========================
-# 15 EDA GRAPHS
-# ===========================
-st.header("📊 Exploratory Data Analysis (15 Graphs)")
+# ----------------------------
+# DASHBOARD
+# ----------------------------
+def dashboard():
 
-graphs = [
-    ("Charges Distribution", lambda: sns.histplot(df["charges"], kde=True)),
-    ("Age Distribution", lambda: sns.histplot(df["age"], kde=True)),
-    ("BMI Distribution", lambda: sns.histplot(df["bmi"], kde=True)),
-    ("Smoker Count", lambda: sns.countplot(x=df["smoker"])),
-    ("Gender Count", lambda: sns.countplot(x=df["sex"])),
-    ("Region Count", lambda: sns.countplot(x=df["region"])),
-    ("Charges vs Age", lambda: sns.scatterplot(x="age", y="charges", data=df)),
-    ("Charges vs BMI", lambda: sns.scatterplot(x="bmi", y="charges", data=df)),
-    ("Charges vs Children", lambda: sns.boxplot(x="children", y="charges", data=df)),
-    ("Charges by Smoking", lambda: sns.boxplot(x="smoker", y="charges", data=df)),
-    ("Charges by Gender", lambda: sns.boxplot(x="sex", y="charges", data=df)),
-    ("Charges by Region", lambda: sns.boxplot(x="region", y="charges", data=df)),
-    ("Correlation Heatmap", lambda: sns.heatmap(df.corr(), annot=True)),
-    ("Charges Outliers", lambda: sns.boxplot(y=df["charges"])),
-    ("BMI Outliers", lambda: sns.boxplot(y=df["bmi"]))
-]
+    # Load data
+    df = pd.read_csv("insurance.csv")
 
-for i, (title, plot_func) in enumerate(graphs, 1):
-    st.subheader(f"{i}. {title}")
-    fig = plt.figure()
-    plot_func()
-    st.pyplot(fig)
+    # Sidebar
+    st.sidebar.title("Filters")
 
-st.success("✅ App Running Successfully with Model + Dataset!")
+    age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20, 60))
+    bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0, 40.0))
+    smoker = st.sidebar.multiselect("Smoker", df.smoker.unique(), default=df.smoker.unique())
+
+    filtered_df = df[
+        (df.age.between(age[0], age[1])) &
+        (df.bmi.between(bmi[0], bmi[1])) &
+        (df.smoker.isin(smoker))
+    ]
+
+    # HEADER
+    st.title("📊 Insurance Pro Dashboard")
+
+    # KPI
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Records", len(filtered_df))
+    col2.metric("Avg Expense", f"₹ {round(filtered_df['expenses'].mean(),2)}")
+    col3.metric("Max Expense", f"₹ {round(filtered_df['expenses'].max(),2)}")
+
+    st.markdown("---")
+
+    # SIMPLE ANIMATION EFFECT
+    progress = st.progress(0)
+    for i in range(100):
+        time.sleep(0.005)
+        progress.progress(i + 1)
+
+    st.success("Dashboard Loaded 🎉")
+
+    # CHARTS
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Age Distribution")
+        st.bar_chart(filtered_df["age"].value_counts())
+
+    with col2:
+        st.subheader("BMI vs Expenses")
+        st.scatter_chart(filtered_df[["bmi", "expenses"]])
+
+    # DATA
+    st.markdown("### Data Preview")
+    st.dataframe(filtered_df.head(20))
+
+    # LOGOUT
+    if st.sidebar.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
+
+# ----------------------------
+# MAIN FLOW
+# ----------------------------
+if not st.session_state.logged_in:
+    login_page()
+else:
+    loading_animation()
+    dashboard()
