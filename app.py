@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
@@ -18,73 +19,59 @@ st.markdown("""
     color: white;
 }
 
-.block-container {
-    padding-top: 0rem;
-}
+.block-container {padding-top:0rem;}
 
 .title {
-    font-size: 42px;
+    font-size:42px;
     text-align:center;
-    font-weight: bold;
-    margin-top: 20px;
+    font-weight:bold;
+    margin-top:20px;
 }
 
 .login-card {
-    margin-top: 40px;
-    padding: 30px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px);
+    margin-top:40px;
+    padding:30px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.05);
 }
 
 input {
-    background: rgba(255,255,255,0.1) !important;
-    border: 2px solid #00ffff !important;
-    color: white !important;
+    background:rgba(255,255,255,0.1)!important;
+    border:2px solid #00ffff!important;
+    color:white!important;
 }
 
-label {display:none;}
+label{display:none;}
 
 .stButton>button {
-    background: linear-gradient(90deg, #00ffff, #007cf0);
-    color: black;
-    border-radius: 8px;
-    font-weight: bold;
+    background:linear-gradient(90deg,#00ffff,#007cf0);
+    color:black;
+    border-radius:8px;
+    font-weight:bold;
 }
 
 .card {
-    background: rgba(255,255,255,0.05);
-    padding: 20px;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    transition: 0.3s;
+    background:rgba(255,255,255,0.05);
+    padding:20px;
+    border-radius:15px;
+    transition:0.3s;
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0 15px #00ffff;
+    transform:translateY(-5px);
+    box-shadow:0 0 15px #00ffff;
 }
 
-/* REMOVE BLUE FILTER BOX */
+/* REMOVE BLUE FILTER */
 div[data-baseweb="select"] > div {
-    border: none !important;
-    box-shadow: none !important;
-    background: rgba(255,255,255,0.05) !important;
-}
-
-div[data-baseweb="select"] * {
-    outline: none !important;
-    box-shadow: none !important;
+    border:none!important;
+    box-shadow:none!important;
 }
 
 div[data-baseweb="tag"] {
-    background: rgba(0,255,255,0.2) !important;
-    border: 1px solid #00ffff !important;
-    color: white !important;
-}
-
-section[data-testid="stSidebar"] {
-    background: linear-gradient(to bottom, #0f2027, #203a43);
+    background:rgba(0,255,255,0.2)!important;
+    border:1px solid #00ffff!important;
+    color:white!important;
 }
 
 </style>
@@ -108,20 +95,20 @@ if "logged_in" not in st.session_state:
 def login():
     st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1,2,1])
+    col1,col2,col3 = st.columns([1,2,1])
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
-        username = st.text_input("", placeholder="👤 Username")
-        password = st.text_input("", type="password", placeholder="🔒 Password")
+        username = st.text_input("", placeholder="Username")
+        password = st.text_input("", type="password", placeholder="Password")
 
         if st.button("Login"):
-            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username,password))
             if c.fetchone():
-                st.session_state.logged_in = True
+                st.session_state.logged_in=True
                 st.rerun()
             else:
-                st.error("Invalid Login")
+                st.error("Invalid login")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -159,71 +146,99 @@ def dashboard():
     smoker = st.sidebar.multiselect("Smoking", df.smoker.unique())
     region = st.sidebar.multiselect("Region", df.region.unique())
 
-    age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20, 60))
-    bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0, 40.0))
+    age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
+    bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
 
-    # ---------------- OVERVIEW MODE ----------------
+    # ---------------- OVERVIEW ----------------
     if not gender or not smoker or not region:
 
         st.markdown("""
         ### 📘 Project Overview
-
-        This project analyzes and predicts medical insurance expenses using machine learning.
-
-        **Features:**
-        - Dynamic filtering
-        - Interactive charts
-        - ML prediction
+        This project analyzes medical insurance expenses using machine learning and EDA.
         """)
 
         st.markdown("### 📊 Dataset Preview (Top 20 Rows)")
         st.dataframe(df.head(20), use_container_width=True, height=300)
 
-        st.warning("⚠️ Please select filters to view analysis")
-
+        st.warning("Select filters to view analysis")
         return
 
-    # ---------------- FILTERED DATA ----------------
+    # ---------------- FILTER ----------------
     filtered_df = df[
         (df.sex.isin(gender)) &
         (df.smoker.isin(smoker)) &
         (df.region.isin(region)) &
-        (df.age.between(age[0], age[1])) &
-        (df.bmi.between(bmi[0], bmi[1]))
+        (df.age.between(age[0],age[1])) &
+        (df.bmi.between(bmi[0],bmi[1]))
     ]
 
     # KPI
-    col1, col2, col3 = st.columns(3)
-
+    col1,col2,col3 = st.columns(3)
     col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
-    col2.markdown(f'<div class="card">Avg Expense<br><h2>₹ {round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="card">Max Expense<br><h2>₹ {round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="card">Avg Expense<br><h2>{round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="card">Max Expense<br><h2>{round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("## 📊 Advanced Analytics")
 
-    # CHARTS
-    col1, col2 = st.columns(2)
+    # 10 GRAPHS
+    col1,col2 = st.columns(2)
 
     with col1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        fig = plt.figure()
+        plt.figure()
         plt.hist(filtered_df["age"])
-        st.pyplot(fig)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.pyplot(plt.gcf())
+        plt.clf()
 
     with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        fig = plt.figure()
+        plt.figure()
         plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
-        st.pyplot(fig)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.pyplot(plt.gcf())
+        plt.clf()
+
+    col1,col2 = st.columns(2)
+
+    with col1:
+        filtered_df.groupby("smoker")["expenses"].mean().plot(kind="bar")
+        st.pyplot(plt.gcf()); plt.clf()
+
+    with col2:
+        filtered_df.groupby("sex")["expenses"].mean().plot(kind="bar")
+        st.pyplot(plt.gcf()); plt.clf()
+
+    col1,col2 = st.columns(2)
+
+    with col1:
+        filtered_df["region"].value_counts().plot(kind="pie", autopct="%1.1f%%")
+        st.pyplot(plt.gcf()); plt.clf()
+
+    with col2:
+        plt.scatter(filtered_df["age"], filtered_df["expenses"])
+        st.pyplot(plt.gcf()); plt.clf()
+
+    col1,col2 = st.columns(2)
+
+    with col1:
+        plt.hist(filtered_df["bmi"])
+        st.pyplot(plt.gcf()); plt.clf()
+
+    with col2:
+        filtered_df.groupby("children")["expenses"].mean().plot()
+        st.pyplot(plt.gcf()); plt.clf()
+
+    col1,col2 = st.columns(2)
+
+    with col1:
+        sns.heatmap(filtered_df.corr(numeric_only=True), annot=True)
+        st.pyplot(plt.gcf()); plt.clf()
+
+    with col2:
+        plt.hist(filtered_df["expenses"])
+        st.pyplot(plt.gcf()); plt.clf()
 
     # ML
-    st.markdown("---")
-    st.subheader("🤖 Prediction")
-
-    age_input = st.slider("Age", 18, 100, 30)
-    bmi_input = st.slider("BMI", 10.0, 50.0, 25.0)
+    st.subheader("Prediction")
+    age_input = st.slider("Age",18,100,30)
+    bmi_input = st.slider("BMI",10.0,50.0,25.0)
 
     if st.button("Predict"):
         input_data = pd.DataFrame({
@@ -239,12 +254,12 @@ def dashboard():
 
         input_data = input_data.reindex(columns=cols, fill_value=0)
         input_scaled = scaler.transform(input_data)
-
         pred = model.predict(input_scaled)[0]
-        st.success(f"💰 ₹ {round(pred,2)}")
+
+        st.success(f"Estimated Expense: {round(pred,2)}")
 
     if st.sidebar.button("Logout"):
-        st.session_state.logged_in = False
+        st.session_state.logged_in=False
         st.rerun()
 
 # ---------------- MAIN ----------------
