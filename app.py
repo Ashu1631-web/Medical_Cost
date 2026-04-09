@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import time
 import sqlite3
-import requests
 import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import StandardScaler
@@ -20,12 +18,7 @@ st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
 
-c.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    username TEXT,
-    password TEXT
-)
-""")
+c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
 conn.commit()
 
 # default user
@@ -41,27 +34,15 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # ----------------------------
-# LOTTIE
-# ----------------------------
-def load_lottie(url):
-    r = requests.get(url)
-    return r.json()
-
-lottie = load_lottie("https://assets2.lottiefiles.com/packages/lf20_touohxv0.json")
-
-# ----------------------------
-# LOGIN (NETFLIX STYLE)
+# LOGIN (FIXED - NO BLACK BUG)
 # ----------------------------
 def login():
-    from streamlit_lottie import st_lottie
 
     st.markdown("""
     <style>
+
     .stApp {
-        background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.95)),
-        url("https://images.unsplash.com/photo-1580281657527-47d48e3a6b0c");
-        background-size: cover;
-        background-position: center;
+        background: linear-gradient(to right, #000000, #0f2027, #203a43);
     }
 
     .title {
@@ -69,23 +50,21 @@ def login():
         text-align:center;
         color:white;
         font-weight:bold;
-        margin-top:40px;
+        margin-top:60px;
     }
 
     .login-card {
-        background: rgba(0,0,0,0.6);
-        padding:40px;
-        border-radius:20px;
-        backdrop-filter: blur(20px);
-        box-shadow: 0 0 25px rgba(0,255,255,0.3);
+        background: rgba(0,0,0,0.7);
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,255,255,0.3);
     }
 
     input {
-        background: transparent !important;
+        background: rgba(255,255,255,0.1) !important;
         border: 2px solid #00ffff !important;
         border-radius: 10px !important;
         color: white !important;
-        box-shadow: 0 0 10px #00ffff;
     }
 
     label {display:none;}
@@ -95,6 +74,7 @@ def login():
         color: black;
         border-radius: 10px;
         font-weight: bold;
+        width: 100%;
     }
 
     </style>
@@ -105,31 +85,20 @@ def login():
     col1, col2, col3 = st.columns([1,2,1])
 
     with col2:
-        st_lottie(lottie, height=200)
-
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
         username = st.text_input("", placeholder="👤 Username")
         password = st.text_input("", type="password", placeholder="🔒 Password")
 
-        colA, colB = st.columns(2)
-
-        with colA:
-            if st.button("Login"):
-                c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-                if c.fetchone():
-                    st.success("Welcome 🚀")
-                    time.sleep(1)
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Invalid Credentials")
-
-        with colB:
-            if st.button("Register"):
-                c.execute("INSERT INTO users VALUES (?, ?)", (username, password))
-                conn.commit()
-                st.success("Account Created")
+        if st.button("Login"):
+            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+            if c.fetchone():
+                st.success("Welcome 🚀")
+                time.sleep(1)
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Invalid Credentials")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -159,14 +128,15 @@ def train_model(df):
     return model, scaler, X.columns
 
 # ----------------------------
-# DASHBOARD
+# DASHBOARD (NETFLIX STYLE)
 # ----------------------------
 def dashboard():
+
     df = load_data()
     model, scaler, cols = train_model(df)
 
-    # FILTERS
-    st.sidebar.title("🔎 Filters")
+    # SIDEBAR
+    st.sidebar.title("🎛️ Filters")
 
     gender = st.sidebar.multiselect("Gender", df.sex.unique(), default=df.sex.unique())
     smoker = st.sidebar.multiselect("Smoking", df.smoker.unique(), default=df.smoker.unique())
@@ -184,28 +154,58 @@ def dashboard():
     ]
 
     # HEADER
-    st.title("📊 AI Medical Dashboard")
+    st.title("📊 Netflix Style Medical Dashboard")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Records", len(filtered_df))
+    col1.metric("Patients", len(filtered_df))
     col2.metric("Avg Expense", f"₹ {round(filtered_df['expenses'].mean(),2)}")
     col3.metric("Max Expense", f"₹ {round(filtered_df['expenses'].max(),2)}")
 
     st.markdown("---")
 
-    # CHARTS
+    # ANIMATION PROGRESS
+    progress = st.progress(0)
+    for i in range(100):
+        time.sleep(0.003)
+        progress.progress(i+1)
+
+    st.success("Dashboard Loaded 🎉")
+
+    # PREMIUM CHARTS
     col1, col2 = st.columns(2)
 
+    # Gradient Bar
     with col1:
         st.subheader("Age Distribution")
-        st.bar_chart(filtered_df["age"].value_counts())
+        fig = plt.figure()
+        plt.hist(filtered_df["age"])
+        st.pyplot(fig)
 
+    # Scatter
     with col2:
         st.subheader("BMI vs Expense")
-        st.scatter_chart(filtered_df[["bmi", "expenses"]])
+        fig = plt.figure()
+        plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
+        st.pyplot(fig)
 
-    # PREDICTION
-    st.subheader("🤖 Predict Expense")
+    # Boxplot
+    col3, col4 = st.columns(2)
+
+    with col3:
+        st.subheader("Expenses by Smoking")
+        fig = plt.figure()
+        filtered_df.boxplot(column="expenses", by="smoker")
+        st.pyplot(fig)
+
+    with col4:
+        st.subheader("Region Distribution")
+        fig = plt.figure()
+        filtered_df["region"].value_counts().plot(kind="pie", autopct="%1.1f%%")
+        st.pyplot(fig)
+
+    # ML
+    st.markdown("---")
+    st.subheader("🤖 AI Prediction")
 
     age_input = st.slider("Age", 18, 100, 30)
     bmi_input = st.slider("BMI", 10.0, 50.0, 25.0)
