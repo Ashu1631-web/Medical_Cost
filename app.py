@@ -7,73 +7,22 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 
-# ---------------- CONFIG ----------------
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ---------------- CSS ----------------
 st.markdown("""
 <style>
-
-.stApp {
-    background: linear-gradient(to right, #000000, #0f2027, #203a43);
-    color: white;
-}
-
+.stApp {background: linear-gradient(to right,#000000,#0f2027,#203a43);color:white;}
 .block-container {padding-top:0rem;}
-
-.title {
-    font-size:42px;
-    text-align:center;
-    font-weight:bold;
-    margin-top:20px;
-}
-
-.login-card {
-    margin-top:40px;
-    padding:30px;
-    border-radius:10px;
-    background:rgba(255,255,255,0.05);
-}
-
-input {
-    background:rgba(255,255,255,0.1)!important;
-    border:2px solid #00ffff!important;
-    color:white!important;
-}
-
+.title {font-size:42px;text-align:center;font-weight:bold;margin-top:20px;}
+.login-card {margin-top:40px;padding:30px;border-radius:10px;background:rgba(255,255,255,0.05);}
+input {background:rgba(255,255,255,0.1)!important;border:2px solid #00ffff!important;color:white!important;}
 label{display:none;}
-
-.stButton>button {
-    background:linear-gradient(90deg,#00ffff,#007cf0);
-    color:black;
-    border-radius:8px;
-    font-weight:bold;
-}
-
-.card {
-    background:rgba(255,255,255,0.05);
-    padding:20px;
-    border-radius:15px;
-    transition:0.3s;
-}
-
-.card:hover {
-    transform:translateY(-5px);
-    box-shadow:0 0 15px #00ffff;
-}
-
-/* REMOVE BLUE FILTER */
-div[data-baseweb="select"] > div {
-    border:none!important;
-    box-shadow:none!important;
-}
-
-div[data-baseweb="tag"] {
-    background:rgba(0,255,255,0.2)!important;
-    border:1px solid #00ffff!important;
-    color:white!important;
-}
-
+.stButton>button {background:linear-gradient(90deg,#00ffff,#007cf0);color:black;border-radius:8px;font-weight:bold;}
+.card {background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;transition:0.3s;}
+.card:hover {transform:translateY(-5px);box-shadow:0 0 15px #00ffff;}
+div[data-baseweb="select"] > div {border:none!important;box-shadow:none!important;}
+div[data-baseweb="tag"] {background:rgba(0,255,255,0.2)!important;border:1px solid #00ffff!important;color:white!important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -153,11 +102,30 @@ def dashboard():
     if not gender or not smoker or not region:
 
         st.markdown("""
-        ### 📘 Project Overview
-        This project analyzes medical insurance expenses using machine learning and EDA.
-        """)
+### 📘 Project Overview
 
-        st.markdown("### 📊 Dataset Preview (Top 20 Rows)")
+This project is designed to analyze and predict **medical insurance expenses** using data analytics and machine learning.
+
+#### 🔍 Objectives:
+- Understand how factors like **age, BMI, smoking habits, and region** affect insurance costs  
+- Perform **Exploratory Data Analysis (EDA)** using multiple visualizations  
+- Build a **predictive model** to estimate expenses  
+
+#### ⚙️ Features:
+- 🎯 Interactive filters (Gender, Smoking, Region)  
+- 📊 10+ data visualizations  
+- 🤖 Machine learning prediction  
+- 💎 Clean dashboard UI  
+
+#### 📈 Business Insight:
+- Smokers tend to have higher insurance charges  
+- BMI and age strongly influence medical costs  
+- Regional differences impact pricing  
+
+---
+### 📊 Dataset Preview (Top 20 Rows)
+""")
+
         st.dataframe(df.head(20), use_container_width=True, height=300)
 
         st.warning("Select filters to view analysis")
@@ -180,63 +148,79 @@ def dashboard():
 
     st.markdown("## 📊 Advanced Analytics")
 
-    # 10 GRAPHS
     col1,col2 = st.columns(2)
 
     with col1:
-        plt.figure()
+        st.subheader("1️⃣ Age Distribution")
+        st.caption("Shows how age is distributed among patients")
         plt.hist(filtered_df["age"])
-        st.pyplot(plt.gcf())
-        plt.clf()
+        st.pyplot(plt.gcf()); plt.clf()
 
     with col2:
-        plt.figure()
+        st.subheader("2️⃣ BMI vs Expense")
+        st.caption("Relationship between BMI and insurance cost")
         plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
-        st.pyplot(plt.gcf())
-        plt.clf()
+        st.pyplot(plt.gcf()); plt.clf()
 
     col1,col2 = st.columns(2)
 
     with col1:
+        st.subheader("3️⃣ Smoker vs Expense")
+        st.caption("Smokers generally have higher expenses")
         filtered_df.groupby("smoker")["expenses"].mean().plot(kind="bar")
         st.pyplot(plt.gcf()); plt.clf()
 
     with col2:
+        st.subheader("4️⃣ Gender vs Expense")
+        st.caption("Compare expense between genders")
         filtered_df.groupby("sex")["expenses"].mean().plot(kind="bar")
         st.pyplot(plt.gcf()); plt.clf()
 
     col1,col2 = st.columns(2)
 
     with col1:
+        st.subheader("5️⃣ Region Distribution")
+        st.caption("Patient distribution by region")
         filtered_df["region"].value_counts().plot(kind="pie", autopct="%1.1f%%")
         st.pyplot(plt.gcf()); plt.clf()
 
     with col2:
+        st.subheader("6️⃣ Age vs Expense")
+        st.caption("Expense increases with age")
         plt.scatter(filtered_df["age"], filtered_df["expenses"])
         st.pyplot(plt.gcf()); plt.clf()
 
     col1,col2 = st.columns(2)
 
     with col1:
+        st.subheader("7️⃣ BMI Distribution")
+        st.caption("Distribution of BMI values")
         plt.hist(filtered_df["bmi"])
         st.pyplot(plt.gcf()); plt.clf()
 
     with col2:
+        st.subheader("8️⃣ Children vs Expense")
+        st.caption("Impact of children on insurance cost")
         filtered_df.groupby("children")["expenses"].mean().plot()
         st.pyplot(plt.gcf()); plt.clf()
 
     col1,col2 = st.columns(2)
 
     with col1:
+        st.subheader("9️⃣ Correlation Heatmap")
+        st.caption("Correlation between variables")
         sns.heatmap(filtered_df.corr(numeric_only=True), annot=True)
         st.pyplot(plt.gcf()); plt.clf()
 
     with col2:
+        st.subheader("🔟 Expense Distribution")
+        st.caption("Distribution of insurance charges")
         plt.hist(filtered_df["expenses"])
         st.pyplot(plt.gcf()); plt.clf()
 
     # ML
-    st.subheader("Prediction")
+    st.subheader("🤖 Prediction")
+
     age_input = st.slider("Age",18,100,30)
     bmi_input = st.slider("BMI",10.0,50.0,25.0)
 
