@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import time
 import sqlite3
 import requests
@@ -15,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ----------------------------
-# DATABASE
+# DATABASE SETUP
 # ----------------------------
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
@@ -41,99 +40,6 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # ----------------------------
-# LOTTIE
-# ----------------------------
-def load_lottie(url):
-    r = requests.get(url)
-    return r.json()
-
-lottie = load_lottie("https://assets2.lottiefiles.com/packages/lf20_touohxv0.json")
-
-# ----------------------------
-# LOGIN (NETFLIX STYLE)
-# ----------------------------
-def login():
-    from streamlit_lottie import st_lottie
-
-    st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.95)),
-        url("https://images.unsplash.com/photo-1580281657527-47d48e3a6b0c");
-        background-size: cover;
-        background-position: center;
-    }
-
-    .title {
-        font-size: 50px;
-        text-align:center;
-        color:white;
-        font-weight:bold;
-        margin-top:40px;
-    }
-
-    .login-card {
-        background: rgba(0,0,0,0.6);
-        padding:40px;
-        border-radius:20px;
-        backdrop-filter: blur(20px);
-        box-shadow: 0 0 25px rgba(0,255,255,0.3);
-    }
-
-    input {
-        background: transparent !important;
-        border: 2px solid #00ffff !important;
-        border-radius: 10px !important;
-        color: white !important;
-        box-shadow: 0 0 10px #00ffff;
-    }
-
-    label {display:none;}
-
-    .stButton>button {
-        background: linear-gradient(90deg, #00ffff, #007cf0);
-        color: black;
-        border-radius: 10px;
-        font-weight: bold;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="title">🩺 AI MEDICAL INSURANCE</div>', unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1,2,1])
-
-    with col2:
-        st_lottie(lottie, height=200)
-
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-
-        username = st.text_input("", placeholder="👤 Username")
-        password = st.text_input("", type="password", placeholder="🔒 Password")
-
-        colA, colB = st.columns(2)
-
-        with colA:
-            if st.button("Login"):
-                c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-                if c.fetchone():
-                    st.success("Welcome 🚀")
-                    time.sleep(1)
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Invalid Credentials")
-
-        with colB:
-            if st.button("Register"):
-                c.execute("INSERT INTO users VALUES (?, ?)", (username, password))
-                conn.commit()
-                st.success("Account Created")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# ----------------------------
 # LOAD DATA
 # ----------------------------
 @st.cache_data
@@ -141,7 +47,7 @@ def load_data():
     return pd.read_csv("insurance.csv")
 
 # ----------------------------
-# MODEL
+# TRAIN MODEL
 # ----------------------------
 @st.cache_resource
 def train_model(df):
@@ -159,13 +65,87 @@ def train_model(df):
     return model, scaler, X.columns
 
 # ----------------------------
+# LOGIN PAGE (FINAL FIXED)
+# ----------------------------
+def login():
+
+    st.markdown("""
+    <style>
+    .stApp {
+        background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.95)),
+        url("https://images.unsplash.com/photo-1588776814546-ec7e9b4dcf6c");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+
+    .title {
+        font-size: 48px;
+        text-align:center;
+        color:white;
+        font-weight:bold;
+        margin-top:20px;
+    }
+
+    .login-card {
+        background: rgba(0,0,0,0.6);
+        padding: 35px;
+        border-radius: 15px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 20px rgba(0,255,255,0.3);
+    }
+
+    input {
+        background: rgba(255,255,255,0.1) !important;
+        border: 2px solid #00ffff !important;
+        border-radius: 10px !important;
+        color: white !important;
+        box-shadow: 0 0 8px #00ffff;
+    }
+
+    label {display:none;}
+
+    .stButton>button {
+        background: linear-gradient(90deg, #00ffff, #007cf0);
+        color: black;
+        border-radius: 10px;
+        font-weight: bold;
+        width: 100%;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="title">🩺 AI MEDICAL INSURANCE</div>', unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1,2,1])
+
+    with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+
+        username = st.text_input("", placeholder="👤 Username")
+        password = st.text_input("", type="password", placeholder="🔒 Password")
+
+        if st.button("Login"):
+            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+            if c.fetchone():
+                st.success("Welcome 🚀")
+                time.sleep(1)
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Invalid Credentials")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# ----------------------------
 # DASHBOARD
 # ----------------------------
 def dashboard():
+
     df = load_data()
     model, scaler, cols = train_model(df)
 
-    # FILTERS
+    # SIDEBAR FILTERS
     st.sidebar.title("🔎 Filters")
 
     gender = st.sidebar.multiselect("Gender", df.sex.unique(), default=df.sex.unique())
@@ -193,7 +173,7 @@ def dashboard():
 
     st.markdown("---")
 
-    # CHARTS
+    # GRAPHS
     col1, col2 = st.columns(2)
 
     with col1:
@@ -204,7 +184,8 @@ def dashboard():
         st.subheader("BMI vs Expense")
         st.scatter_chart(filtered_df[["bmi", "expenses"]])
 
-    # PREDICTION
+    # ML PREDICTION
+    st.markdown("---")
     st.subheader("🤖 Predict Expense")
 
     age_input = st.slider("Age", 18, 100, 30)
@@ -228,6 +209,7 @@ def dashboard():
         pred = model.predict(input_scaled)[0]
         st.success(f"💰 ₹ {round(pred,2)}")
 
+    # LOGOUT
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
