@@ -17,50 +17,30 @@ st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 st.markdown("""
 <style>
 
-/* BACKGROUND */
 .stApp {
     background: linear-gradient(to right, #000000, #0f2027, #203a43);
     color: white;
 }
 
-/* REMOVE TOP GAP */
 .block-container {
     padding-top: 0rem;
 }
 
-/* CENTER LOGIN */
-.center-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-/* TITLE */
 .title {
     font-size: 42px;
+    text-align:center;
     font-weight: bold;
-    text-align: center;
-    margin-bottom: 20px;
+    margin-top: 30px;
 }
 
 /* LOGIN CARD */
 .login-card {
-    width: 350px;
+    margin-top: 40px;
     padding: 30px;
-    border-radius: 15px;
+    border-radius: 10px;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(10px);
-    box-shadow: 0 0 20px rgba(0,255,255,0.3);
-    animation: pulse 2s infinite;
-}
-
-/* GLOW */
-@keyframes pulse {
-    0% { box-shadow: 0 0 10px #00ffff; }
-    50% { box-shadow: 0 0 25px #00ffff; }
-    100% { box-shadow: 0 0 10px #00ffff; }
+    box-shadow: 0 0 15px rgba(0,255,255,0.2);
 }
 
 /* INPUT */
@@ -76,12 +56,12 @@ label {display:none;}
 .stButton>button {
     background: linear-gradient(90deg, #00ffff, #007cf0);
     color: black;
-    border-radius: 10px;
+    border-radius: 8px;
     font-weight: bold;
     width: 100%;
 }
 
-/* CARD */
+/* DASHBOARD CARD */
 .card {
     background: rgba(255,255,255,0.05);
     padding: 20px;
@@ -121,25 +101,25 @@ if "logged_in" not in st.session_state:
 # ----------------------------
 def login():
 
-    st.markdown('<div class="center-box">', unsafe_allow_html=True)
-
     st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="login-card">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
 
-    username = st.text_input("", placeholder="👤 Username")
-    password = st.text_input("", type="password", placeholder="🔒 Password")
+    with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
-    if st.button("Login"):
-        c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-        if c.fetchone():
-            st.session_state.logged_in = True
-            st.rerun()
-        else:
-            st.error("Invalid Login")
+        username = st.text_input("", placeholder="👤 Username")
+        password = st.text_input("", type="password", placeholder="🔒 Password")
 
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("Login"):
+            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+            if c.fetchone():
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Invalid Login")
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------
 # LOAD DATA
@@ -194,7 +174,7 @@ def dashboard():
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0, 40.0))
 
     if not gender or not smoker or not region:
-        st.warning("⚠️ Please select filters")
+        st.warning("⚠️ Please select filters to view data")
         return
 
     filtered_df = df[
@@ -205,7 +185,7 @@ def dashboard():
         (df.bmi.between(bmi[0], bmi[1]))
     ]
 
-    # KPI
+    # KPI CARDS
     col1, col2, col3 = st.columns(3)
 
     col1.markdown(f'<div class="card">👥 Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
@@ -231,7 +211,7 @@ def dashboard():
         st.pyplot(fig)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ML
+    # ML PREDICTION
     st.markdown("---")
     st.subheader("🤖 Prediction")
 
