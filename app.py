@@ -13,11 +13,69 @@ from sklearn.linear_model import LinearRegression
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ----------------------------
+# GLOBAL CSS (PREMIUM UI)
+# ----------------------------
+st.markdown("""
+<style>
+
+/* DARK THEME */
+.stApp {
+    background: linear-gradient(to right, #000000, #0f2027, #203a43);
+    color: white;
+}
+
+/* REMOVE TOP GAP */
+.block-container {
+    padding-top: 0rem;
+}
+
+/* TITLE */
+.title {
+    text-align:center;
+    font-size: 45px;
+    font-weight: bold;
+}
+
+/* GLASS CARD */
+.card {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    transition: 0.3s;
+}
+
+/* HOVER EFFECT */
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px #00ffff;
+}
+
+/* BUTTON */
+.stButton>button {
+    background: linear-gradient(90deg, #00ffff, #007cf0);
+    color: black;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+/* INPUT */
+input {
+    background: rgba(255,255,255,0.1) !important;
+    border: 2px solid #00ffff !important;
+    color: white !important;
+}
+
+label {display:none;}
+
+</style>
+""", unsafe_allow_html=True)
+
+# ----------------------------
 # DATABASE
 # ----------------------------
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
-
 c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
 conn.commit()
 
@@ -32,52 +90,15 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # ----------------------------
-# LOGIN FIXED
+# LOGIN
 # ----------------------------
 def login():
-
-    st.markdown("""
-    <style>
-
-    .stApp {
-        background: linear-gradient(to right, #000000, #0f2027, #203a43);
-    }
-
-    /* REMOVE EMPTY BLOCK */
-    .block-container {
-        padding-top: 1rem;
-    }
-
-    .title {
-        font-size: 45px;
-        text-align:center;
-        color:white;
-        font-weight:bold;
-    }
-
-    .login-card {
-        background: rgba(0,0,0,0.8);
-        padding: 30px;
-        border-radius: 10px;
-    }
-
-    input {
-        background: rgba(255,255,255,0.1) !important;
-        border: 2px solid #00ffff !important;
-        color: white !important;
-    }
-
-    label {display:none;}
-
-    </style>
-    """, unsafe_allow_html=True)
-
     st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1,2,1])
 
     with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
 
         username = st.text_input("", placeholder="Username")
         password = st.text_input("", type="password", placeholder="Password")
@@ -88,7 +109,7 @@ def login():
                 st.session_state.logged_in = True
                 st.rerun()
             else:
-                st.error("Invalid login")
+                st.error("Invalid Login")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -125,31 +146,22 @@ def dashboard():
     df = load_data()
     model, scaler, cols = train_model(df)
 
-    st.title("📊 AI Medical Insurance Analysis")
+    st.markdown('<div class="title">📊 Premium Medical Dashboard</div>', unsafe_allow_html=True)
 
     # ----------------------------
-    # PROJECT DESCRIPTION (IMPORTANT FOR EVALUATION)
+    # PROJECT INFO
     # ----------------------------
     st.markdown("""
     ### 📘 Project Overview
-
-    This project predicts medical insurance expenses using machine learning.
-
-    **Key Features:**
-    - User-based filtering (Gender, Smoking, Region)
-    - Dynamic data visualization
-    - Machine learning prediction model
-    - Interactive dashboard
-
-    The objective is to help analyze how factors like age, BMI, smoking, and region affect insurance costs.
+    AI-based dashboard to analyze medical insurance expenses dynamically using filters and ML.
     """)
 
     st.markdown("---")
 
     # ----------------------------
-    # FILTERS (NO DEFAULT)
+    # FILTERS
     # ----------------------------
-    st.sidebar.title("🎯 Select Filters")
+    st.sidebar.title("🎯 Filters")
 
     gender = st.sidebar.multiselect("Gender", df.sex.unique())
     smoker = st.sidebar.multiselect("Smoking", df.smoker.unique())
@@ -158,11 +170,8 @@ def dashboard():
     age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20, 60))
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0, 40.0))
 
-    # ----------------------------
-    # CONDITION: USER MUST SELECT
-    # ----------------------------
     if not gender or not smoker or not region:
-        st.warning("⚠️ Please select filters to view analysis")
+        st.warning("Select filters to view dashboard")
         return
 
     filtered_df = df[
@@ -174,37 +183,47 @@ def dashboard():
     ]
 
     # ----------------------------
-    # KPI
+    # KPI CARDS (ANIMATED)
     # ----------------------------
     col1, col2, col3 = st.columns(3)
-    col1.metric("Records", len(filtered_df))
-    col2.metric("Avg Expense", f"₹ {round(filtered_df['expenses'].mean(),2)}")
-    col3.metric("Max Expense", f"₹ {round(filtered_df['expenses'].max(),2)}")
+
+    with col1:
+        st.markdown(f'<div class="card">👥 Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f'<div class="card">💰 Avg Expense<br><h2>₹ {round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f'<div class="card">📈 Max Expense<br><h2>₹ {round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
     # ----------------------------
-    # GRAPHS
+    # CHARTS (GLASS STYLE)
     # ----------------------------
     col1, col2 = st.columns(2)
 
     with col1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("Age Distribution")
         fig = plt.figure()
         plt.hist(filtered_df["age"])
         st.pyplot(fig)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("BMI vs Expense")
         fig = plt.figure()
         plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
         st.pyplot(fig)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ----------------------------
     # ML
     # ----------------------------
     st.markdown("---")
-    st.subheader("🤖 Prediction")
+    st.subheader("🤖 AI Prediction")
 
     age_input = st.slider("Age", 18, 100, 30)
     bmi_input = st.slider("BMI", 10.0, 50.0, 25.0)
