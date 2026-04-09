@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import time
 import sqlite3
 import matplotlib.pyplot as plt
 
@@ -13,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ----------------------------
-# GLOBAL CSS (ANIMATION + UI)
+# GLOBAL CSS
 # ----------------------------
 st.markdown("""
 <style>
@@ -29,26 +28,25 @@ st.markdown("""
     padding-top: 0rem;
 }
 
-/* FADE-IN */
-.main {
-    animation: fadeIn 1.5s ease-in;
-}
-
-@keyframes fadeIn {
-    from {opacity: 0;}
-    to {opacity: 1;}
-}
-
 /* CENTER LOGIN */
-.main-center {
+.center-box {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 90vh;
+    height: 100vh;
 }
 
-/* LOGIN BOX */
-.login-box {
+/* TITLE */
+.title {
+    font-size: 42px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* LOGIN CARD */
+.login-card {
     width: 350px;
     padding: 30px;
     border-radius: 15px;
@@ -58,7 +56,7 @@ st.markdown("""
     animation: pulse 2s infinite;
 }
 
-/* GLOW PULSE */
+/* GLOW */
 @keyframes pulse {
     0% { box-shadow: 0 0 10px #00ffff; }
     50% { box-shadow: 0 0 25px #00ffff; }
@@ -80,31 +78,10 @@ label {display:none;}
     color: black;
     border-radius: 10px;
     font-weight: bold;
-    transition: 0.3s;
+    width: 100%;
 }
 
-.stButton>button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px #00ffff;
-}
-
-/* TYPING TITLE */
-.typing {
-    font-size: 45px;
-    text-align:center;
-    font-weight:bold;
-    overflow: hidden;
-    white-space: nowrap;
-    border-right: 3px solid #00ffff;
-    width: 0;
-    animation: typing 3s steps(30, end) forwards;
-}
-
-@keyframes typing {
-    from {width: 0}
-    to {width: 100%}
-}
-
+/* CARD */
 .card {
     background: rgba(255,255,255,0.05);
     padding: 20px;
@@ -144,13 +121,14 @@ if "logged_in" not in st.session_state:
 # ----------------------------
 def login():
 
-    st.markdown('<div class="typing">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
+    st.markdown('<div class="center-box">', unsafe_allow_html=True)
 
-    st.markdown('<div class="main-center">', unsafe_allow_html=True)
-    st.markdown('<div class="login-box">', unsafe_allow_html=True)
+    st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    username = st.text_input("", placeholder="Username")
-    password = st.text_input("", type="password", placeholder="Password")
+    st.markdown('<div class="login-card">', unsafe_allow_html=True)
+
+    username = st.text_input("", placeholder="👤 Username")
+    password = st.text_input("", type="password", placeholder="🔒 Password")
 
     if st.button("Login"):
         c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
@@ -196,10 +174,12 @@ def dashboard():
     df = load_data()
     model, scaler, cols = train_model(df)
 
-    st.markdown('<div class="typing">📊 Premium Dashboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="title">📊 Premium Dashboard</div>', unsafe_allow_html=True)
 
-    st.markdown("### 📘 Project Overview")
-    st.write("AI-powered dashboard to analyze medical insurance data dynamically.")
+    st.markdown("""
+    ### 📘 Project Overview
+    This project analyzes medical insurance expenses using filters and machine learning.
+    """)
 
     st.markdown("---")
 
@@ -214,7 +194,7 @@ def dashboard():
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0, 40.0))
 
     if not gender or not smoker or not region:
-        st.warning("Select filters to view dashboard")
+        st.warning("⚠️ Please select filters")
         return
 
     filtered_df = df[
@@ -228,9 +208,9 @@ def dashboard():
     # KPI
     col1, col2, col3 = st.columns(3)
 
-    col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
-    col2.markdown(f'<div class="card">Avg Expense<br><h2>₹ {round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="card">Max Expense<br><h2>₹ {round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
+    col1.markdown(f'<div class="card">👥 Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="card">💰 Avg Expense<br><h2>₹ {round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="card">📈 Max Expense<br><h2>₹ {round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
