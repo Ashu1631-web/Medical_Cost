@@ -194,12 +194,6 @@ Analyze and predict **medical insurance costs** using Machine Learning.
         filtered.groupby("children")["expenses"].mean().plot()
         st.pyplot(plt.gcf()); plt.clf()
 
-        # Extra graphs
-        for i in range(11,16):
-            st.subheader(f"{i}️⃣ Additional Analysis")
-            plt.hist(filtered["expenses"])
-            st.pyplot(plt.gcf()); plt.clf()
-
     # ================= PREDICTION =================
     if menu == "💰 Insurance Prediction":
 
