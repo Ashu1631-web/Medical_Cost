@@ -7,6 +7,10 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 
+# PDF
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ---------------- CSS ----------------
@@ -135,7 +139,6 @@ def dashboard():
 
     st.markdown('<div class="title">📊 Premium Dashboard</div>', unsafe_allow_html=True)
 
-    # -------- Navigation --------
     menu = st.sidebar.radio(
         "📌 Navigation",
         ["📘 Project Overview", "📊 Analytics Dashboard", "💰 Insurance Prediction"]
@@ -147,75 +150,30 @@ def dashboard():
         st.markdown("""
 # 📘 Project Overview
 
-This project is designed to analyze and predict **medical insurance expenses** using **data analytics and machine learning techniques**.
-
----
-
-## 🔍 Objectives
-- Understand how factors like **age, BMI, smoking habits, and region** affect insurance costs  
-- Perform **Exploratory Data Analysis (EDA)** using multiple visualizations  
-- Build a **predictive model** to estimate medical expenses  
-
----
-
-## ⚙️ Key Features
-- 🎯 Interactive filters for dynamic analysis  
-- 📊 15+ advanced visualizations  
-- 🤖 Machine Learning-based prediction system  
-- 💻 Clean and user-friendly dashboard UI  
-
----
-
-## 📈 Insights
-- Smokers tend to have significantly higher insurance charges  
-- BMI and age strongly influence medical costs  
-- Regional differences impact pricing patterns  
-
----
-
-## 📊 Dataset Preview
+This project analyzes and predicts medical insurance expenses using ML and data analytics.
 """)
 
-        st.dataframe(df.head(20), use_container_width=True, height=300)
+        st.dataframe(df.head(20))
         return
 
-    # -------- ANALYTICS DASHBOARD --------
+    # -------- ANALYTICS --------
     if menu == "📊 Analytics Dashboard":
-
-        st.subheader("🎯 Analysis Controls")
 
         gender = st.multiselect("Gender", df.sex.unique())
         smoker = st.multiselect("Smoking", df.smoker.unique())
         region = st.multiselect("Region", df.region.unique())
 
-        age = st.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
-        bmi = st.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
+        if not gender: gender=df.sex.unique()
+        if not smoker: smoker=df.smoker.unique()
+        if not region: region=df.region.unique()
 
-        if not gender:
-            gender = df.sex.unique()
-        if not smoker:
-            smoker = df.smoker.unique()
-        if not region:
-            region = df.region.unique()
+        filtered = df[(df.sex.isin(gender)) & (df.smoker.isin(smoker)) & (df.region.isin(region))]
 
-        filtered_df = df[
-            (df.sex.isin(gender)) &
-            (df.smoker.isin(smoker)) &
-            (df.region.isin(region)) &
-            (df.age.between(age[0],age[1])) &
-            (df.bmi.between(bmi[0],bmi[1]))
-        ]
-
-        col1,col2,col3 = st.columns(3)
-        col1.metric("Records", len(filtered_df))
-        col2.metric("Avg Expense", round(filtered_df["expenses"].mean(),2))
-        col3.metric("Max Expense", round(filtered_df["expenses"].max(),2))
-
-        st.markdown("## 📊 15 Graphs")
+        st.metric("Records", len(filtered))
+        st.metric("Avg Cost", round(filtered.expenses.mean(),2))
 
         for i in range(1,16):
-            st.write(f"Graph {i}")
-            plt.hist(filtered_df["expenses"])
+            plt.hist(filtered["expenses"])
             st.pyplot(plt.gcf()); plt.clf()
 
     # -------- PREDICTION --------
@@ -227,6 +185,7 @@ This project is designed to analyze and predict **medical insurance expenses** u
         bmi = st.slider("BMI",10.0,50.0,25.0)
 
         if st.button("Predict"):
+
             input_data = pd.DataFrame({
                 "age":[age],
                 "bmi":[bmi],
@@ -242,6 +201,36 @@ This project is designed to analyze and predict **medical insurance expenses** u
             pred = model.predict(scaler.transform(input_data))[0]
 
             st.success(f"₹ {round(pred,2)}")
+
+            # -------- CSV --------
+            result_df = pd.DataFrame({
+                "Age":[age],
+                "BMI":[bmi],
+                "Cost":[round(pred,2)]
+            })
+
+            st.download_button("📥 Download CSV", result_df.to_csv().encode(), "report.csv")
+
+            # -------- TXT --------
+            txt = f"Age: {age}\nBMI: {bmi}\nCost: ₹ {round(pred,2)}"
+            st.download_button("📄 Download TXT", txt, "report.txt")
+
+            # -------- PDF --------
+            file_path = "invoice.pdf"
+            doc = SimpleDocTemplate(file_path)
+            styles = getSampleStyleSheet()
+
+            content = []
+            content.append(Paragraph("Insurance Invoice", styles["Title"]))
+            content.append(Spacer(1,20))
+            content.append(Paragraph(f"Age: {age}", styles["Normal"]))
+            content.append(Paragraph(f"BMI: {bmi}", styles["Normal"]))
+            content.append(Paragraph(f"Cost: ₹ {round(pred,2)}", styles["Heading2"]))
+
+            doc.build(content)
+
+            with open(file_path,"rb") as f:
+                st.download_button("📄 Download PDF Invoice", f, "invoice.pdf")
 
     if st.sidebar.button("Logout"):
         st.session_state.logged_in=False
