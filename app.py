@@ -84,15 +84,14 @@ def login():
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
-        # ✅ Remember Me Autofill
+        # Remember Me Autofill
         default_user = st.session_state.get("remember_user", "")
         username = st.text_input("", value=default_user, placeholder="👤 Username")
 
-        # ✅ Show/Hide Password
-        show_pass = st.checkbox("Show Password")
+        # Password (NO show/hide)
         password = st.text_input(
             "",
-            type="default" if show_pass else "password",
+            type="password",
             placeholder="🔒 Password"
         )
 
@@ -136,7 +135,7 @@ def train_model(df):
 # ---------------- DASHBOARD ----------------
 def dashboard():
 
-    # ✅ Reset background after login
+    # Reset background after login
     st.markdown("""
     <style>
     .stApp {
