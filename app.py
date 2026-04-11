@@ -24,31 +24,38 @@ st.markdown("""
     margin-bottom:30px;
 }
 
-/* Login Card */
+/* Clean Login Card (no blur/glow) */
 .login-card {
     margin-top:10px;
-    padding:40px;
-    border-radius:20px;
-    background:rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
-    box-shadow:0 0 25px rgba(0,255,255,0.2);
+    padding:20px;
+    border-radius:10px;
+    background: transparent;
+    box-shadow:none;
     text-align:center;
-    transition:0.3s;
-}
-.login-card:hover {
-    transform: scale(1.02);
 }
 
-/* Inputs */
+/* Clean Inputs (NO BLUE GLOW) */
 input {
     background:rgba(255,255,255,0.1)!important;
-    border:2px solid #00ffff!important;
+    border:1px solid #ccc !important;
     color:white!important;
-    margin-bottom:15px!important;
-    padding:12px!important;
+    padding:10px!important;
+    outline:none!important;
+    box-shadow:none!important;
 }
 
-/* Buttons */
+input:focus {
+    border:1px solid #aaa !important;
+    box-shadow:none !important;
+}
+
+/* Streamlit override */
+.stTextInput > div > div > input:focus {
+    border:1px solid #aaa !important;
+    box-shadow:none !important;
+}
+
+/* Button */
 .stButton>button {
     background:linear-gradient(90deg,#00ffff,#007cf0);
     color:black;
@@ -88,7 +95,6 @@ if "logged_in" not in st.session_state:
 # ---------------- LOGIN ----------------
 def login():
 
-    # Background Image Updated
     st.markdown("""
     <style>
     .stApp {
@@ -151,7 +157,6 @@ def train_model(df):
 # ---------------- DASHBOARD ----------------
 def dashboard():
 
-    # Reset background
     st.markdown("""
     <style>
     .stApp {
