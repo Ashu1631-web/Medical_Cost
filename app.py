@@ -42,24 +42,109 @@ if "logged_in" not in st.session_state:
 
 # ---------------- LOGIN ----------------
 def login():
-    st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    col1,col2,col3 = st.columns([1,2,1])
-    with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+    # --------- Background only for login ----------
+    st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)),
+        url("https://images.unsplash.com/photo-1588776814546-ec7e4b3c8c8c");
+        background-size: cover;
+        background-position: center;
+    }
 
-        username = st.text_input("", placeholder="Username")
-        password = st.text_input("", type="password", placeholder="Password")
+    .login-container {
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:90vh;
+    }
 
-        if st.button("Login"):
-            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username,password))
-            if c.fetchone():
-                st.session_state.logged_in=True
-                st.rerun()
-            else:
-                st.error("Invalid login")
+    .login-card {
+        width:400px;
+        padding:40px;
+        border-radius:20px;
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(15px);
+        box-shadow:0 0 30px rgba(0,255,255,0.2);
+        text-align:center;
+    }
 
-        st.markdown('</div>', unsafe_allow_html=True)
+    .logo {
+        font-size:40px;
+        margin-bottom:10px;
+    }
+
+    .title {
+        font-size:28px;
+        font-weight:bold;
+        margin-bottom:25px;
+    }
+
+    input {
+        background:rgba(255,255,255,0.1)!important;
+        border:2px solid #00ffff!important;
+        color:white!important;
+        padding:12px!important;
+        margin-bottom:15px!important;
+        border-radius:8px!important;
+    }
+
+    .stButton > button {
+        width:100%;
+        padding:12px;
+        border-radius:10px;
+        background:linear-gradient(90deg,#00ffff,#007cf0);
+        color:black;
+        font-weight:bold;
+        margin-top:10px;
+    }
+
+    .remember {
+        text-align:left;
+        font-size:14px;
+        margin-top:5px;
+        margin-bottom:10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # -------- Layout ----------
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    st.markdown('<div class="login-card">', unsafe_allow_html=True)
+
+    # -------- Logo + Title ----------
+    st.markdown('<div class="logo">🩺</div>', unsafe_allow_html=True)
+    st.markdown('<div class="title">AI Medical Insurance</div>', unsafe_allow_html=True)
+
+    # -------- Inputs ----------
+    username = st.text_input("", placeholder="👤 Username")
+
+    show_pass = st.checkbox("Show Password")
+    password = st.text_input(
+        "",
+        type="default" if show_pass else "password",
+        placeholder="🔒 Password"
+    )
+
+    remember = st.checkbox("Remember Me")
+
+    # -------- Login ----------
+    if st.button("🚀 Login"):
+        c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+        if c.fetchone():
+            st.session_state.logged_in = True
+
+            if remember:
+                st.session_state["remember_user"] = username
+
+            st.success("Login Successful ✅")
+            st.rerun()
+        else:
+            st.error("Invalid Username or Password ❌")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------- LOAD DATA ----------------
 @st.cache_data
