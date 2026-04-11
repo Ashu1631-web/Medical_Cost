@@ -15,7 +15,6 @@ st.markdown("""
 .stApp {background: linear-gradient(to right,#000000,#0f2027,#203a43);color:white;}
 .block-container {padding-top:0rem;}
 
-/* Title */
 .title {
     font-size:42px;
     text-align:center;
@@ -24,7 +23,6 @@ st.markdown("""
     margin-bottom:30px;
 }
 
-/* Login Card */
 .login-card {
     margin-top:10px;
     padding:20px;
@@ -34,7 +32,6 @@ st.markdown("""
     text-align:center;
 }
 
-/* Inputs */
 input {
     background:rgba(255,255,255,0.1)!important;
     border:1px solid #ccc !important;
@@ -49,13 +46,11 @@ input:focus {
     box-shadow:none !important;
 }
 
-/* Streamlit override */
 .stTextInput > div > div > input:focus {
     border:1px solid #aaa !important;
     box-shadow:none !important;
 }
 
-/* Button */
 .stButton>button {
     background:linear-gradient(90deg,#00ffff,#007cf0);
     color:black;
@@ -64,7 +59,6 @@ input:focus {
     width:100%;
 }
 
-/* Cards */
 .card {
     background:rgba(255,255,255,0.05);
     padding:20px;
@@ -109,7 +103,6 @@ def login():
 
         default_user = st.session_state.get("remember_user", "")
         username = st.text_input("", value=default_user, placeholder="👤 Username")
-
         password = st.text_input("", type="password", placeholder="🔒 Password")
 
         remember = st.checkbox("Remember Me")
@@ -164,27 +157,10 @@ def dashboard():
 
     # -------- SIDEBAR --------
     st.sidebar.title("📌 Navigation")
-
-    menu = st.sidebar.radio(
-        "Go to",
-        ["📘 Project Overview", "📊 Analytics Dashboard"]
-    )
-
-    st.sidebar.markdown("---")
-
-    # Renamed Filters
-    st.sidebar.title("🎯 Analysis Controls")
-
-    gender = st.sidebar.multiselect("Gender", df.sex.unique())
-    smoker = st.sidebar.multiselect("Smoking", df.smoker.unique())
-    region = st.sidebar.multiselect("Region", df.region.unique())
-
-    age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
-    bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
+    menu = st.sidebar.radio("Go to", ["📘 Project Overview", "📊 Analytics Dashboard"])
 
     # -------- PROJECT OVERVIEW --------
     if menu == "📘 Project Overview":
-
         st.markdown("""
 ### 📘 Project Overview
 
@@ -206,12 +182,31 @@ This project analyzes and predicts **medical insurance expenses** using data ana
 - Age & BMI affect expenses  
 - Region impacts pricing  
 """)
-
         st.dataframe(df.head(20), use_container_width=True, height=300)
         return
 
-    # -------- ANALYTICS --------
+    # -------- ANALYTICS DASHBOARD --------
     if menu == "📊 Analytics Dashboard":
+
+        st.subheader("🎯 Analysis Controls")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            gender = st.multiselect("Gender", df.sex.unique())
+        with col2:
+            smoker = st.multiselect("Smoking", df.smoker.unique())
+        with col3:
+            region = st.multiselect("Region", df.region.unique())
+
+        col4, col5 = st.columns(2)
+        with col4:
+            age = st.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
+        with col5:
+            bmi = st.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
+
+        if not gender or not smoker or not region:
+            st.warning("⚠️ Please select filters to view analysis")
+            return
 
         filtered_df = df[
             (df.sex.isin(gender)) &
@@ -229,7 +224,6 @@ This project analyzes and predicts **medical insurance expenses** using data ana
         st.markdown("## 📊 Analytics")
 
         col1, col2 = st.columns(2)
-
         with col1:
             plt.hist(filtered_df["age"])
             st.pyplot(plt.gcf()); plt.clf()
