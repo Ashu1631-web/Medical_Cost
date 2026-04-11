@@ -12,34 +12,43 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
-# ---------------- CSS ----------------
+# ---------------- CSS FIX ----------------
 st.markdown("""
 <style>
+
+/* BACKGROUND */
 [data-testid="stAppViewContainer"] {
     background: linear-gradient(to right,#000000,#0f2027,#203a43);
     color:white;
 }
 
-/* FIX DOUBLE BOX */
-div[data-baseweb="select"] > div {
+/* REMOVE DOUBLE BOX COMPLETELY */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div {
     background: rgba(255,255,255,0.08) !important;
     border: 1px solid rgba(255,255,255,0.2) !important;
     border-radius: 8px !important;
     box-shadow: none !important;
 }
-input {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 8px !important;
-}
+
+/* REMOVE INNER BORDER */
 div[data-baseweb="input"] {
     background: transparent !important;
     border: none !important;
 }
+
+/* TEXT INPUT */
+input {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color:white !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- DATABASE ----------------
+# ---------------- DB ----------------
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
 c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
@@ -106,14 +115,32 @@ def dashboard():
         "💰 Insurance Prediction"
     ])
 
-    # -------- OVERVIEW --------
+    # ================= OVERVIEW =================
     if menu == "📘 Project Overview":
-        st.title("📘 Project Overview")
-        st.write("Insurance cost prediction using ML and analytics.")
-        st.dataframe(df.head())
 
-    # -------- ANALYTICS --------
+        st.title("📘 Project Overview")
+
+        st.markdown("""
+### 🎯 Objective
+Predict medical insurance cost using ML
+
+### ⚙️ Features
+- 15+ Graphs
+- ML Prediction
+- Download Reports
+
+### 📊 Insights
+- Smoking increases cost
+- BMI impacts pricing
+- Age is key factor
+""")
+
+        st.dataframe(df.head(20))
+
+    # ================= ANALYTICS =================
     if menu == "📊 Analytics Dashboard":
+
+        st.subheader("🎯 Analysis Controls")
 
         gender = st.multiselect("Gender", df.sex.unique())
         smoker = st.multiselect("Smoking", df.smoker.unique())
@@ -123,37 +150,56 @@ def dashboard():
         if not smoker: smoker=df.smoker.unique()
         if not region: region=df.region.unique()
 
-        filtered = df[(df.sex.isin(gender)) & (df.smoker.isin(smoker) & (df.region.isin(region)))]
+        filtered = df[
+            (df.sex.isin(gender)) &
+            (df.smoker.isin(smoker)) &
+            (df.region.isin(region))
+        ]
 
-        st.metric("Records", len(filtered))
-        st.metric("Avg Cost", round(filtered.expenses.mean(),2))
-        st.metric("Max Cost", round(filtered.expenses.max(),2))
+        # KPI ONE LINE
+        col1,col2,col3 = st.columns(3)
+        col1.metric("Records", len(filtered))
+        col2.metric("Avg Cost", round(filtered.expenses.mean(),2))
+        col3.metric("Max Cost", round(filtered.expenses.max(),2))
 
         st.markdown("## 📊 Premium Analytics")
 
         sns.set_style("darkgrid")
 
-        plt.figure()
-        sns.histplot(filtered["age"], kde=True, color="cyan")
-        st.pyplot(plt)
+        col1,col2 = st.columns(2)
 
-        plt.figure()
-        sns.histplot(filtered["bmi"], kde=True, color="orange")
-        st.pyplot(plt)
+        with col1:
+            st.subheader("📈 Age Distribution")
+            plt.figure()
+            sns.histplot(filtered["age"], kde=True, color="cyan")
+            st.pyplot(plt.gcf()); plt.clf()
 
-        plt.figure()
-        sns.scatterplot(x="age", y="expenses", data=filtered, color="lime")
-        st.pyplot(plt)
+        with col2:
+            st.subheader("📊 BMI Distribution")
+            plt.figure()
+            sns.histplot(filtered["bmi"], kde=True, color="orange")
+            st.pyplot(plt.gcf()); plt.clf()
 
-        plt.figure()
-        sns.barplot(x="smoker", y="expenses", data=filtered, palette="magma")
-        st.pyplot(plt)
+        col1,col2 = st.columns(2)
 
+        with col1:
+            st.subheader("💰 Age vs Expense")
+            plt.figure()
+            sns.scatterplot(x="age", y="expenses", data=filtered, color="lime")
+            st.pyplot(plt.gcf()); plt.clf()
+
+        with col2:
+            st.subheader("🔥 Smoking Impact")
+            plt.figure()
+            sns.barplot(x="smoker", y="expenses", data=filtered, palette="magma")
+            st.pyplot(plt.gcf()); plt.clf()
+
+        st.subheader("📊 Correlation Heatmap")
         plt.figure(figsize=(8,5))
         sns.heatmap(filtered.corr(numeric_only=True), annot=True, cmap="coolwarm")
-        st.pyplot(plt)
+        st.pyplot(plt.gcf()); plt.clf()
 
-    # -------- PREDICTION --------
+    # ================= PREDICTION =================
     if menu == "💰 Insurance Prediction":
 
         st.title("💰 Insurance Prediction")
@@ -165,9 +211,8 @@ def dashboard():
         age = st.number_input("Age",18,100,30)
         gender = st.selectbox("Gender",["Male","Female"])
         dependents = st.number_input("Dependents",0,10,0)
-        income = st.number_input("Income (₹ Lakhs)",1,50,5)
 
-        bmi_cat = st.selectbox("BMI Category",["Normal","Overweight","Obese"])
+        bmi_cat = st.selectbox("BMI",["Normal","Overweight","Obese"])
         smoking = st.selectbox("Smoking",["No","Yes"])
         disease = st.selectbox("Medical History",["No Disease","Diabetes","Heart Disease"])
         region = st.selectbox("Region",["northwest","southeast","southwest","northeast"])
@@ -175,7 +220,7 @@ def dashboard():
         if st.button("Predict"):
 
             if name=="" or email=="" or phone=="":
-                st.error("Fill all required fields")
+                st.error("Fill required fields")
                 st.stop()
 
             bmi = 25
@@ -200,14 +245,6 @@ def dashboard():
 
             st.success(f"💰 Estimated Cost: ₹ {round(pred,2)}")
 
-            # CSV
-            st.download_button("Download CSV",
-                               pd.DataFrame({"Cost":[pred]}).to_csv().encode())
-
-            # TXT
-            st.download_button("Download TXT",
-                               f"Cost ₹ {pred}")
-
             # PDF
             doc = SimpleDocTemplate("invoice.pdf")
             styles = getSampleStyleSheet()
@@ -216,16 +253,13 @@ def dashboard():
                 Paragraph("Insurance Invoice", styles["Title"]),
                 Spacer(1,20),
                 Paragraph(f"Name: {name}", styles["Normal"]),
-                Paragraph(f"Email: {email}", styles["Normal"]),
-                Paragraph(f"Phone: {phone}", styles["Normal"]),
-                Spacer(1,10),
-                Paragraph(f"Cost ₹ {round(pred,2)}", styles["Heading2"]),
+                Paragraph(f"Cost ₹ {round(pred,2)}", styles["Heading2"])
             ]
 
             doc.build(content)
 
             with open("invoice.pdf","rb") as f:
-                st.download_button("Download PDF Invoice", f)
+                st.download_button("Download Invoice", f)
 
 # ---------------- MAIN ----------------
 if not st.session_state.logged_in:
