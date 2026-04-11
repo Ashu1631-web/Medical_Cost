@@ -66,12 +66,11 @@ if "logged_in" not in st.session_state:
 # ---------------- LOGIN ----------------
 def login():
 
-    # Background only for login
     st.markdown("""
     <style>
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)),
-        url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3?q=80&w=1355&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+        url("https://images.unsplash.com/photo-1588776814546-ec7e4b3c8c8c");
         background-size: cover;
         background-position: center;
     }
@@ -84,16 +83,10 @@ def login():
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
-        # Remember Me Autofill
         default_user = st.session_state.get("remember_user", "")
         username = st.text_input("", value=default_user, placeholder="👤 Username")
 
-        # Password (NO show/hide)
-        password = st.text_input(
-            "",
-            type="password",
-            placeholder="🔒 Password"
-        )
+        password = st.text_input("", type="password", placeholder="🔒 Password")
 
         remember = st.checkbox("Remember Me")
 
@@ -135,7 +128,6 @@ def train_model(df):
 # ---------------- DASHBOARD ----------------
 def dashboard():
 
-    # Reset background after login
     st.markdown("""
     <style>
     .stApp {
@@ -158,8 +150,36 @@ def dashboard():
     age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
 
-    # Overview
+    # ✅ Project Overview Restored
     if not gender or not smoker or not region:
+
+        st.markdown("""
+### 📘 Project Overview
+
+This project analyzes and predicts **medical insurance expenses** using data analytics and machine learning.
+
+#### 🔍 Objectives:
+- Understand impact of age, BMI, smoking, and region  
+- Perform EDA with visualizations  
+- Predict insurance cost  
+
+#### ⚙️ Features:
+- Interactive filters  
+- 10+ charts  
+- ML prediction  
+- Clean UI  
+
+#### 📈 Insights:
+- Smokers have higher costs  
+- Age & BMI affect expenses  
+- Region impacts pricing  
+
+---
+### 📊 Dataset Preview
+""")
+
+        st.dataframe(df.head(20), use_container_width=True, height=300)
+
         st.warning("Select filters to view analysis")
         return
 
@@ -171,7 +191,6 @@ def dashboard():
         (df.bmi.between(bmi[0],bmi[1]))
     ]
 
-    # KPI
     col1,col2,col3 = st.columns(3)
     col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
     col2.markdown(f'<div class="card">Avg Expense<br><h2>{round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
