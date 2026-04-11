@@ -12,43 +12,54 @@ st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 # ---------------- CSS ----------------
 st.markdown("""
 <style>
-.stApp {background: linear-gradient(to right,#000000,#0f2027,#203a43);color:white;}
-.block-container {padding-top:0rem;}
-.title {font-size:42px;text-align:center;font-weight:bold;margin-top:20px;}
-.login-card {
-    margin-top:40px;
-    padding:45px;
-    border-radius:20px;
-    background:rgba(255,255,255,0.08);
-    backdrop-filter: blur(15px);
-    box-shadow:0 0 30px rgba(0,255,255,0.2);
+
+/* Background Image Updated */
+.stApp {
+    background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)),
+    url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3?q=80&w=1355&auto=format&fit=crop");
+    background-size: cover;
+    background-position: center;
+}
+
+/* Title Down + Spacing Fix */
+.title {
+    font-size:36px;
     text-align:center;
-    transition:0.3s;
-}
-.login-card:hover {
-    transform: scale(1.02);
-}
-input {
-    background:rgba(255,255,255,0.1)!important;
-    border:2px solid #00ffff!important;
-    color:white!important;
-}
-label{display:none;}
-.stButton>button {
-    background:linear-gradient(90deg,#00ffff,#007cf0);
-    color:black;
-    border-radius:8px;
     font-weight:bold;
-    text-align:center;
-    font-size:16px;
+    margin-top:80px;   /* 👈 yaha se neeche aayega */
+    margin-bottom:30px;
 }
-.card {background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;transition:0.3s;}
-.card:hover {transform:translateY(-5px);box-shadow:0 0 15px #00ffff;}
-div[data-baseweb="select"] > div {border:none!important;box-shadow:none!important;}
-div[data-baseweb="tag"] {background:rgba(0,255,255,0.2)!important;border:1px solid #00ffff!important;color:white!important;}
+
+/* Remove Extra Black Box Issue */
+.block-container {
+    padding-top: 0rem;
+}
+
+/* Clean Login Card */
+.login-card {
+    margin-top:10px;   /* 👈 gap kam kiya */
+    padding:40px;
+    border-radius:20px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    box-shadow:0 0 25px rgba(0,255,255,0.2);
+    text-align:center;
+}
+
+/* Input spacing */
+input {
+    margin-bottom:15px !important;
+    padding:12px !important;
+}
+
+/* Button */
+.stButton>button {
+    width:100%;
+    margin-top:10px;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
 # ---------------- DATABASE ----------------
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
