@@ -12,54 +12,65 @@ st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 # ---------------- CSS ----------------
 st.markdown("""
 <style>
+.stApp {background: linear-gradient(to right,#000000,#0f2027,#203a43);color:white;}
+.block-container {padding-top:0rem;}
 
-/* Background Image Updated */
-.stApp {
-    background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)),
-    url("https://images.unsplash.com/photo-1523243319451-54b60322f948?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
-    background-size: cover;
-    background-position: center;
-}
-
-/* Title Down + Spacing Fix */
+/* Title */
 .title {
-    font-size:36px;
+    font-size:42px;
     text-align:center;
     font-weight:bold;
-    margin-top:80px;   /* 👈 yaha se neeche aayega */
+    margin-top:80px;
     margin-bottom:30px;
 }
 
-/* Remove Extra Black Box Issue */
-.block-container {
-    padding-top: 0rem;
-}
-
-/* Clean Login Card */
+/* Login Card */
 .login-card {
-    margin-top:10px;   /* 👈 gap kam kiya */
+    margin-top:10px;
     padding:40px;
     border-radius:20px;
-    background: rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.08);
     backdrop-filter: blur(12px);
     box-shadow:0 0 25px rgba(0,255,255,0.2);
     text-align:center;
+    transition:0.3s;
+}
+.login-card:hover {
+    transform: scale(1.02);
 }
 
-/* Input spacing */
+/* Inputs */
 input {
-    margin-bottom:15px !important;
-    padding:12px !important;
+    background:rgba(255,255,255,0.1)!important;
+    border:2px solid #00ffff!important;
+    color:white!important;
+    margin-bottom:15px!important;
+    padding:12px!important;
 }
 
-/* Button */
+/* Buttons */
 .stButton>button {
+    background:linear-gradient(90deg,#00ffff,#007cf0);
+    color:black;
+    border-radius:8px;
+    font-weight:bold;
     width:100%;
-    margin-top:10px;
 }
 
+/* Cards */
+.card {
+    background:rgba(255,255,255,0.05);
+    padding:20px;
+    border-radius:15px;
+    transition:0.3s;
+}
+.card:hover {
+    transform:translateY(-5px);
+    box-shadow:0 0 15px #00ffff;
+}
 </style>
 """, unsafe_allow_html=True)
+
 # ---------------- DATABASE ----------------
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
@@ -77,11 +88,12 @@ if "logged_in" not in st.session_state:
 # ---------------- LOGIN ----------------
 def login():
 
+    # Background Image Updated
     st.markdown("""
     <style>
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)),
-        url("https://images.unsplash.com/photo-1588776814546-ec7e4b3c8c8c");
+        url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3?q=80&w=1355&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
     }
@@ -90,7 +102,7 @@ def login():
 
     st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    col1,col2,col3 = st.columns([1,2,1])
+    col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
@@ -102,9 +114,9 @@ def login():
         remember = st.checkbox("Remember Me")
 
         if st.button("🚀 Login"):
-            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username,password))
+            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
             if c.fetchone():
-                st.session_state.logged_in=True
+                st.session_state.logged_in = True
 
                 if remember:
                     st.session_state["remember_user"] = username
@@ -139,6 +151,7 @@ def train_model(df):
 # ---------------- DASHBOARD ----------------
 def dashboard():
 
+    # Reset background
     st.markdown("""
     <style>
     .stApp {
@@ -161,7 +174,7 @@ def dashboard():
     age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
 
-    # ✅ Project Overview Restored
+    # Project Overview
     if not gender or not smoker or not region:
 
         st.markdown("""
@@ -202,14 +215,14 @@ This project analyzes and predicts **medical insurance expenses** using data ana
         (df.bmi.between(bmi[0],bmi[1]))
     ]
 
-    col1,col2,col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
     col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
     col2.markdown(f'<div class="card">Avg Expense<br><h2>{round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
     col3.markdown(f'<div class="card">Max Expense<br><h2>{round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("## 📊 Advanced Analytics")
 
-    col1,col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
     with col1:
         plt.hist(filtered_df["age"])
