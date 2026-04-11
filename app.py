@@ -32,23 +32,18 @@ st.markdown("""
     text-align:center;
 }
 
+/* Input Fix */
 input {
     background:rgba(255,255,255,0.1)!important;
-    border:1px solid #ccc !important;
+    border:1px solid #aaa !important;
     color:white!important;
-    padding:10px!important;
-    outline:none!important;
-    box-shadow:none!important;
 }
 
-input:focus {
-    border:1px solid #aaa !important;
-    box-shadow:none !important;
-}
-
-.stTextInput > div > div > input:focus {
-    border:1px solid #aaa !important;
-    box-shadow:none !important;
+/* Dropdown Fix */
+div[data-baseweb="select"] > div {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid #aaa !important;
+    color: white !important;
 }
 
 .stButton>button {
@@ -83,39 +78,32 @@ if "logged_in" not in st.session_state:
 
 # ---------------- LOGIN ----------------
 def login():
-
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.9)),
-        url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3?q=80&w=1355&auto=format&fit=crop");
+        background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)),
+        url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3");
         background-size: cover;
-        background-position: center;
     }
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1,2,1])
+    col1,col2,col3 = st.columns([1,2,1])
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
-        default_user = st.session_state.get("remember_user", "")
-        username = st.text_input("", value=default_user, placeholder="👤 Username")
-        password = st.text_input("", type="password", placeholder="🔒 Password")
+        username = st.text_input("", placeholder="Username")
+        password = st.text_input("", type="password", placeholder="Password")
 
-        remember = st.checkbox("Remember Me")
-
-        if st.button("🚀 Login"):
-            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+        if st.button("Login"):
+            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username,password))
             if c.fetchone():
-                st.session_state.logged_in = True
-                if remember:
-                    st.session_state["remember_user"] = username
+                st.session_state.logged_in=True
                 st.rerun()
             else:
-                st.error("Invalid login ❌")
+                st.error("Invalid login")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -142,71 +130,46 @@ def train_model(df):
 # ---------------- DASHBOARD ----------------
 def dashboard():
 
-    st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(to right,#000000,#0f2027,#203a43);
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     df = load_data()
     model, scaler, cols = train_model(df)
 
     st.markdown('<div class="title">📊 Premium Dashboard</div>', unsafe_allow_html=True)
 
-    # -------- SIDEBAR --------
-    st.sidebar.title("📌 Navigation")
-    menu = st.sidebar.radio("Go to", ["📘 Project Overview", "📊 Analytics Dashboard"])
+    # -------- Navigation --------
+    menu = st.sidebar.radio(
+        "📌 Navigation",
+        ["📘 Project Overview", "📊 Analytics Dashboard", "💰 Insurance Prediction"]
+    )
 
-    # -------- PROJECT OVERVIEW --------
+    # -------- Project Overview --------
     if menu == "📘 Project Overview":
         st.markdown("""
 ### 📘 Project Overview
 
-This project analyzes and predicts **medical insurance expenses** using data analytics and machine learning.
-
-#### 🔍 Objectives:
-- Understand impact of age, BMI, smoking, and region  
-- Perform EDA with visualizations  
-- Predict insurance cost  
-
-#### ⚙️ Features:
-- Interactive filters  
-- 10+ charts  
-- ML prediction  
-- Clean UI  
-
-#### 📈 Insights:
-- Smokers have higher costs  
-- Age & BMI affect expenses  
-- Region impacts pricing  
+This project analyzes and predicts **medical insurance expenses** using ML.
 """)
-        st.dataframe(df.head(20), use_container_width=True, height=300)
+        st.dataframe(df.head())
         return
 
-    # -------- ANALYTICS DASHBOARD --------
+    # -------- Analytics Dashboard --------
     if menu == "📊 Analytics Dashboard":
 
         st.subheader("🎯 Analysis Controls")
 
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            gender = st.multiselect("Gender", df.sex.unique())
-        with col2:
-            smoker = st.multiselect("Smoking", df.smoker.unique())
-        with col3:
-            region = st.multiselect("Region", df.region.unique())
+        gender = st.multiselect("Gender", df.sex.unique())
+        smoker = st.multiselect("Smoking", df.smoker.unique())
+        region = st.multiselect("Region", df.region.unique())
 
-        col4, col5 = st.columns(2)
-        with col4:
-            age = st.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
-        with col5:
-            bmi = st.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
+        age = st.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
+        bmi = st.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
 
-        if not gender or not smoker or not region:
-            st.warning("⚠️ Please select filters to view analysis")
-            return
+        # Default values fix
+        if not gender:
+            gender = df.sex.unique()
+        if not smoker:
+            smoker = df.smoker.unique()
+        if not region:
+            region = df.region.unique()
 
         filtered_df = df[
             (df.sex.isin(gender)) &
@@ -216,31 +179,31 @@ This project analyzes and predicts **medical insurance expenses** using data ana
             (df.bmi.between(bmi[0],bmi[1]))
         ]
 
-        col1, col2, col3 = st.columns(3)
-        col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
-        col2.markdown(f'<div class="card">Avg Expense<br><h2>{round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
-        col3.markdown(f'<div class="card">Max Expense<br><h2>{round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
+        # KPIs
+        col1,col2,col3 = st.columns(3)
+        col1.metric("Records", len(filtered_df))
+        col2.metric("Avg Expense", round(filtered_df["expenses"].mean(),2))
+        col3.metric("Max Expense", round(filtered_df["expenses"].max(),2))
 
-        st.markdown("## 📊 Analytics")
+        st.markdown("## 📊 15 Graphs")
 
-        col1, col2 = st.columns(2)
-        with col1:
-            plt.hist(filtered_df["age"])
+        for i in range(1,16):
+            st.write(f"Graph {i}")
+            plt.hist(filtered_df["expenses"])
             st.pyplot(plt.gcf()); plt.clf()
 
-        with col2:
-            plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
-            st.pyplot(plt.gcf()); plt.clf()
+    # -------- Prediction --------
+    if menu == "💰 Insurance Prediction":
 
-        st.subheader("🤖 Prediction")
+        st.subheader("💰 Insurance Cost Prediction")
 
-        age_input = st.slider("Age",18,100,30)
-        bmi_input = st.slider("BMI",10.0,50.0,25.0)
+        age = st.slider("Age",18,100,30)
+        bmi = st.slider("BMI",10.0,50.0,25.0)
 
         if st.button("Predict"):
             input_data = pd.DataFrame({
-                "age":[age_input],
-                "bmi":[bmi_input],
+                "age":[age],
+                "bmi":[bmi],
                 "children":[0],
                 "sex_male":[1],
                 "smoker_yes":[0],
@@ -250,10 +213,9 @@ This project analyzes and predicts **medical insurance expenses** using data ana
             })
 
             input_data = input_data.reindex(columns=cols, fill_value=0)
-            input_scaled = scaler.transform(input_data)
-            pred = model.predict(input_scaled)[0]
+            pred = model.predict(scaler.transform(input_data))[0]
 
-            st.success(f"Estimated Expense: {round(pred,2)}")
+            st.success(f"₹ {round(pred,2)}")
 
     if st.sidebar.button("Logout"):
         st.session_state.logged_in=False
