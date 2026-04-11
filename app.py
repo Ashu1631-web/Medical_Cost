@@ -12,37 +12,42 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
-# ---------------- CSS FIX ----------------
+# ---------------- CSS (FINAL FIX) ----------------
 st.markdown("""
 <style>
 
-/* BACKGROUND */
 [data-testid="stAppViewContainer"] {
     background: linear-gradient(to right,#000000,#0f2027,#203a43);
     color:white;
 }
 
-/* REMOVE DOUBLE BOX COMPLETELY */
-div[data-baseweb="select"] > div,
-div[data-baseweb="input"] > div {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    border-radius: 8px !important;
+/* REMOVE ALL INNER LINES */
+div[data-baseweb="input"],
+div[data-baseweb="select"] {
+    border: none !important;
     box-shadow: none !important;
 }
 
-/* REMOVE INNER BORDER */
-div[data-baseweb="input"] {
-    background: transparent !important;
-    border: none !important;
+/* MAIN BOX */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
 }
 
-/* TEXT INPUT */
+/* REMOVE INPUT LINE */
 input {
-    background: rgba(255,255,255,0.08) !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    color:white !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: white !important;
+}
+
+input:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 </style>
@@ -115,32 +120,25 @@ def dashboard():
         "💰 Insurance Prediction"
     ])
 
-    # ================= OVERVIEW =================
+    # -------- OVERVIEW --------
     if menu == "📘 Project Overview":
 
         st.title("📘 Project Overview")
 
         st.markdown("""
 ### 🎯 Objective
-Predict medical insurance cost using ML
-
-### ⚙️ Features
-- 15+ Graphs
-- ML Prediction
-- Download Reports
+Predict insurance cost using ML
 
 ### 📊 Insights
 - Smoking increases cost
 - BMI impacts pricing
-- Age is key factor
+- Age affects insurance
 """)
 
         st.dataframe(df.head(20))
 
-    # ================= ANALYTICS =================
+    # -------- ANALYTICS --------
     if menu == "📊 Analytics Dashboard":
-
-        st.subheader("🎯 Analysis Controls")
 
         gender = st.multiselect("Gender", df.sex.unique())
         smoker = st.multiselect("Smoking", df.smoker.unique())
@@ -166,40 +164,54 @@ Predict medical insurance cost using ML
 
         sns.set_style("darkgrid")
 
-        col1,col2 = st.columns(2)
-
-        with col1:
-            st.subheader("📈 Age Distribution")
-            plt.figure()
-            sns.histplot(filtered["age"], kde=True, color="cyan")
-            st.pyplot(plt.gcf()); plt.clf()
-
-        with col2:
-            st.subheader("📊 BMI Distribution")
-            plt.figure()
-            sns.histplot(filtered["bmi"], kde=True, color="orange")
-            st.pyplot(plt.gcf()); plt.clf()
-
-        col1,col2 = st.columns(2)
-
-        with col1:
-            st.subheader("💰 Age vs Expense")
-            plt.figure()
-            sns.scatterplot(x="age", y="expenses", data=filtered, color="lime")
-            st.pyplot(plt.gcf()); plt.clf()
-
-        with col2:
-            st.subheader("🔥 Smoking Impact")
-            plt.figure()
-            sns.barplot(x="smoker", y="expenses", data=filtered, palette="magma")
-            st.pyplot(plt.gcf()); plt.clf()
-
-        st.subheader("📊 Correlation Heatmap")
-        plt.figure(figsize=(8,5))
-        sns.heatmap(filtered.corr(numeric_only=True), annot=True, cmap="coolwarm")
+        # EXISTING GRAPHS
+        plt.figure()
+        sns.histplot(filtered["age"], kde=True, color="cyan")
+        st.subheader("📈 Age Distribution")
         st.pyplot(plt.gcf()); plt.clf()
 
-    # ================= PREDICTION =================
+        plt.figure()
+        sns.histplot(filtered["bmi"], kde=True, color="orange")
+        st.subheader("📊 BMI Distribution")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        plt.figure()
+        sns.scatterplot(x="age", y="expenses", data=filtered, color="lime")
+        st.subheader("💰 Age vs Expense")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        plt.figure()
+        sns.barplot(x="smoker", y="expenses", data=filtered, palette="magma")
+        st.subheader("🔥 Smoking Impact")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        plt.figure(figsize=(8,5))
+        sns.heatmap(filtered.corr(numeric_only=True), annot=True, cmap="coolwarm")
+        st.subheader("📊 Correlation Heatmap")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        # NEW 4 GRAPHS
+        plt.figure()
+        sns.scatterplot(x="bmi", y="children", data=filtered, color="yellow")
+        st.subheader("📊 BMI vs Children")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        plt.figure()
+        sns.scatterplot(x="age", y="bmi", data=filtered, color="pink")
+        st.subheader("📈 Age vs BMI")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        plt.figure()
+        sns.barplot(x="region", y="expenses", data=filtered, palette="coolwarm")
+        st.subheader("🔥 Expenses by Region")
+        st.pyplot(plt.gcf()); plt.clf()
+
+        plt.figure()
+        filtered.groupby(pd.cut(filtered["age"], bins=5))["expenses"].mean().plot()
+        st.subheader("📉 Expense Trend by Age Group")
+        st.pyplot(plt.gcf()); plt.clf()
+
+    # -------- PREDICTION --------
     if menu == "💰 Insurance Prediction":
 
         st.title("💰 Insurance Prediction")
