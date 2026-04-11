@@ -7,58 +7,20 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 
+# PDF
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
 # ---------------- CSS ----------------
 st.markdown("""
 <style>
 .stApp {background: linear-gradient(to right,#000000,#0f2027,#203a43);color:white;}
-.block-container {padding-top:0rem;}
-
-.title {
-    font-size:42px;
-    text-align:center;
-    font-weight:bold;
-    margin-top:80px;
-    margin-bottom:30px;
-}
-
-.login-card {
-    margin-top:10px;
-    padding:20px;
-    border-radius:10px;
-    background: transparent;
-    box-shadow:none;
-    text-align:center;
-}
-
-/* Input Fix */
-input {
-    background:rgba(255,255,255,0.1)!important;
-    border:1px solid #aaa !important;
-    color:white!important;
-}
-
-/* Dropdown Fix */
-div[data-baseweb="select"] > div {
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid #aaa !important;
-    color: white !important;
-}
-
-.stButton>button {
-    background:linear-gradient(90deg,#00ffff,#007cf0);
-    color:black;
-    border-radius:8px;
-    font-weight:bold;
-    width:100%;
-}
-
-.card {
-    background:rgba(255,255,255,0.05);
-    padding:20px;
-    border-radius:15px;
-}
+.title {text-align:center;font-size:40px;margin-top:80px;}
+.login-card {background:none;box-shadow:none;text-align:center;}
+input {background:rgba(255,255,255,0.1)!important;border:1px solid #aaa!important;color:white!important;}
+div[data-baseweb="select"] > div {background:rgba(255,255,255,0.1)!important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,43 +38,49 @@ if not c.execute("SELECT * FROM users WHERE username='admin'").fetchone():
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+# ---------------- PDF FUNCTION ----------------
+def generate_pdf(age, gender, income, smoking, region, pred):
+
+    file_path = "insurance_report.pdf"
+    doc = SimpleDocTemplate(file_path)
+    styles = getSampleStyleSheet()
+
+    content = []
+    content.append(Paragraph("AI Medical Insurance Invoice", styles["Title"]))
+    content.append(Spacer(1,20))
+
+    content.append(Paragraph(f"Age: {age}", styles["Normal"]))
+    content.append(Paragraph(f"Gender: {gender}", styles["Normal"]))
+    content.append(Paragraph(f"Income: ₹ {income} Lakhs", styles["Normal"]))
+    content.append(Paragraph(f"Smoking: {smoking}", styles["Normal"]))
+    content.append(Paragraph(f"Region: {region}", styles["Normal"]))
+
+    content.append(Spacer(1,20))
+    content.append(Paragraph(f"Estimated Cost: ₹ {round(pred,2)}", styles["Heading2"]))
+
+    doc.build(content)
+    return file_path
+
 # ---------------- LOGIN ----------------
 def login():
-    st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)),
-        url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3");
-        background-size: cover;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     st.markdown('<div class="title">🩺 AI Medical Insurance</div>', unsafe_allow_html=True)
 
-    col1,col2,col3 = st.columns([1,2,1])
-    with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
-        username = st.text_input("", placeholder="Username")
-        password = st.text_input("", type="password", placeholder="Password")
+    if st.button("Login"):
+        c.execute("SELECT * FROM users WHERE username=? AND password=?", (username,password))
+        if c.fetchone():
+            st.session_state.logged_in=True
+            st.rerun()
+        else:
+            st.error("Invalid login")
 
-        if st.button("Login"):
-            c.execute("SELECT * FROM users WHERE username=? AND password=?", (username,password))
-            if c.fetchone():
-                st.session_state.logged_in=True
-                st.rerun()
-            else:
-                st.error("Invalid login")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------------- LOAD DATA ----------------
+# ---------------- LOAD ----------------
 @st.cache_data
 def load_data():
     return pd.read_csv("insurance.csv")
 
-# ---------------- MODEL ----------------
 @st.cache_resource
 def train_model(df):
     df = pd.get_dummies(df, drop_first=True)
@@ -120,10 +88,8 @@ def train_model(df):
     y = df["expenses"]
 
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
     model = LinearRegression()
-    model.fit(X_scaled, y)
+    model.fit(scaler.fit_transform(X), y)
 
     return model, scaler, X.columns
 
@@ -133,83 +99,54 @@ def dashboard():
     df = load_data()
     model, scaler, cols = train_model(df)
 
-    st.markdown('<div class="title">📊 Premium Dashboard</div>', unsafe_allow_html=True)
+    menu = st.sidebar.radio("Navigation", ["Overview","Analytics","Prediction"])
 
-    # -------- Navigation --------
-    menu = st.sidebar.radio(
-        "📌 Navigation",
-        ["📘 Project Overview", "📊 Analytics Dashboard", "💰 Insurance Prediction"]
-    )
-
-    # -------- Project Overview --------
-    if menu == "📘 Project Overview":
-        st.markdown("""
-### 📘 Project Overview
-
-This project analyzes and predicts **medical insurance expenses** using ML.
-""")
+    # -------- OVERVIEW --------
+    if menu == "Overview":
+        st.title("📘 Project Overview")
+        st.write("Insurance cost prediction using ML")
         st.dataframe(df.head())
-        return
 
-    # -------- Analytics Dashboard --------
-    if menu == "📊 Analytics Dashboard":
-
-        st.subheader("🎯 Analysis Controls")
+    # -------- ANALYTICS --------
+    if menu == "Analytics":
 
         gender = st.multiselect("Gender", df.sex.unique())
         smoker = st.multiselect("Smoking", df.smoker.unique())
         region = st.multiselect("Region", df.region.unique())
 
-        age = st.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
-        bmi = st.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
+        if not gender: gender=df.sex.unique()
+        if not smoker: smoker=df.smoker.unique()
+        if not region: region=df.region.unique()
 
-        # Default values fix
-        if not gender:
-            gender = df.sex.unique()
-        if not smoker:
-            smoker = df.smoker.unique()
-        if not region:
-            region = df.region.unique()
+        filtered = df[(df.sex.isin(gender)) & (df.smoker.isin(smoker)) & (df.region.isin(region))]
 
-        filtered_df = df[
-            (df.sex.isin(gender)) &
-            (df.smoker.isin(smoker)) &
-            (df.region.isin(region)) &
-            (df.age.between(age[0],age[1])) &
-            (df.bmi.between(bmi[0],bmi[1]))
-        ]
+        st.metric("Records", len(filtered))
+        st.metric("Avg Cost", round(filtered.expenses.mean(),2))
 
-        # KPIs
-        col1,col2,col3 = st.columns(3)
-        col1.metric("Records", len(filtered_df))
-        col2.metric("Avg Expense", round(filtered_df["expenses"].mean(),2))
-        col3.metric("Max Expense", round(filtered_df["expenses"].max(),2))
-
-        st.markdown("## 📊 15 Graphs")
-
-        for i in range(1,16):
-            st.write(f"Graph {i}")
-            plt.hist(filtered_df["expenses"])
+        for i in range(15):
+            plt.hist(filtered["expenses"])
             st.pyplot(plt.gcf()); plt.clf()
 
-    # -------- Prediction --------
-    if menu == "💰 Insurance Prediction":
-
-        st.subheader("💰 Insurance Cost Prediction")
+    # -------- PREDICTION --------
+    if menu == "Prediction":
 
         age = st.slider("Age",18,100,30)
-        bmi = st.slider("BMI",10.0,50.0,25.0)
+        income = st.slider("Income",1,50,5)
+        gender = st.selectbox("Gender",["Male","Female"])
+        smoking = st.selectbox("Smoking",["Yes","No"])
+        region = st.selectbox("Region",["northwest","southeast","southwest","northeast"])
 
         if st.button("Predict"):
+
             input_data = pd.DataFrame({
                 "age":[age],
-                "bmi":[bmi],
+                "bmi":[25],
                 "children":[0],
-                "sex_male":[1],
-                "smoker_yes":[0],
-                "region_northwest":[0],
-                "region_southeast":[0],
-                "region_southwest":[0],
+                "sex_male":[1 if gender=="Male" else 0],
+                "smoker_yes":[1 if smoking=="Yes" else 0],
+                "region_northwest":[1 if region=="northwest" else 0],
+                "region_southeast":[1 if region=="southeast" else 0],
+                "region_southwest":[1 if region=="southwest" else 0],
             })
 
             input_data = input_data.reindex(columns=cols, fill_value=0)
@@ -217,9 +154,14 @@ This project analyzes and predicts **medical insurance expenses** using ML.
 
             st.success(f"₹ {round(pred,2)}")
 
-    if st.sidebar.button("Logout"):
-        st.session_state.logged_in=False
-        st.rerun()
+            # CSV
+            df_out = pd.DataFrame({"Cost":[pred]})
+            st.download_button("Download CSV", df_out.to_csv().encode(), "result.csv")
+
+            # PDF
+            pdf = generate_pdf(age, gender, income, smoking, region, pred)
+            with open(pdf,"rb") as f:
+                st.download_button("Download PDF Invoice", f, "invoice.pdf")
 
 # ---------------- MAIN ----------------
 if not st.session_state.logged_in:
