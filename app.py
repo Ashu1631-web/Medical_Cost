@@ -24,7 +24,7 @@ st.markdown("""
     margin-bottom:30px;
 }
 
-/* Clean Login Card (no blur/glow) */
+/* Login Card */
 .login-card {
     margin-top:10px;
     padding:20px;
@@ -34,7 +34,7 @@ st.markdown("""
     text-align:center;
 }
 
-/* Clean Inputs (NO BLUE GLOW) */
+/* Inputs */
 input {
     background:rgba(255,255,255,0.1)!important;
     border:1px solid #ccc !important;
@@ -69,11 +69,6 @@ input:focus {
     background:rgba(255,255,255,0.05);
     padding:20px;
     border-radius:15px;
-    transition:0.3s;
-}
-.card:hover {
-    transform:translateY(-5px);
-    box-shadow:0 0 15px #00ffff;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -123,11 +118,8 @@ def login():
             c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
             if c.fetchone():
                 st.session_state.logged_in = True
-
                 if remember:
                     st.session_state["remember_user"] = username
-
-                st.success("Login Successful ✅")
                 st.rerun()
             else:
                 st.error("Invalid login ❌")
@@ -170,7 +162,18 @@ def dashboard():
 
     st.markdown('<div class="title">📊 Premium Dashboard</div>', unsafe_allow_html=True)
 
-    st.sidebar.title("🎯 Filters")
+    # -------- SIDEBAR --------
+    st.sidebar.title("📌 Navigation")
+
+    menu = st.sidebar.radio(
+        "Go to",
+        ["📘 Project Overview", "📊 Analytics Dashboard"]
+    )
+
+    st.sidebar.markdown("---")
+
+    # Renamed Filters
+    st.sidebar.title("🎯 Analysis Controls")
 
     gender = st.sidebar.multiselect("Gender", df.sex.unique())
     smoker = st.sidebar.multiselect("Smoking", df.smoker.unique())
@@ -179,8 +182,8 @@ def dashboard():
     age = st.sidebar.slider("Age", int(df.age.min()), int(df.age.max()), (20,60))
     bmi = st.sidebar.slider("BMI", float(df.bmi.min()), float(df.bmi.max()), (15.0,40.0))
 
-    # Project Overview
-    if not gender or not smoker or not region:
+    # -------- PROJECT OVERVIEW --------
+    if menu == "📘 Project Overview":
 
         st.markdown("""
 ### 📘 Project Overview
@@ -202,63 +205,61 @@ This project analyzes and predicts **medical insurance expenses** using data ana
 - Smokers have higher costs  
 - Age & BMI affect expenses  
 - Region impacts pricing  
-
----
-### 📊 Dataset Preview
 """)
 
         st.dataframe(df.head(20), use_container_width=True, height=300)
-
-        st.warning("Select filters to view analysis")
         return
 
-    filtered_df = df[
-        (df.sex.isin(gender)) &
-        (df.smoker.isin(smoker)) &
-        (df.region.isin(region)) &
-        (df.age.between(age[0],age[1])) &
-        (df.bmi.between(bmi[0],bmi[1]))
-    ]
+    # -------- ANALYTICS --------
+    if menu == "📊 Analytics Dashboard":
 
-    col1, col2, col3 = st.columns(3)
-    col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
-    col2.markdown(f'<div class="card">Avg Expense<br><h2>{round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="card">Max Expense<br><h2>{round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
+        filtered_df = df[
+            (df.sex.isin(gender)) &
+            (df.smoker.isin(smoker)) &
+            (df.region.isin(region)) &
+            (df.age.between(age[0],age[1])) &
+            (df.bmi.between(bmi[0],bmi[1]))
+        ]
 
-    st.markdown("## 📊 Advanced Analytics")
+        col1, col2, col3 = st.columns(3)
+        col1.markdown(f'<div class="card">Records<br><h2>{len(filtered_df)}</h2></div>', unsafe_allow_html=True)
+        col2.markdown(f'<div class="card">Avg Expense<br><h2>{round(filtered_df["expenses"].mean(),2)}</h2></div>', unsafe_allow_html=True)
+        col3.markdown(f'<div class="card">Max Expense<br><h2>{round(filtered_df["expenses"].max(),2)}</h2></div>', unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
+        st.markdown("## 📊 Analytics")
 
-    with col1:
-        plt.hist(filtered_df["age"])
-        st.pyplot(plt.gcf()); plt.clf()
+        col1, col2 = st.columns(2)
 
-    with col2:
-        plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
-        st.pyplot(plt.gcf()); plt.clf()
+        with col1:
+            plt.hist(filtered_df["age"])
+            st.pyplot(plt.gcf()); plt.clf()
 
-    st.subheader("🤖 Prediction")
+        with col2:
+            plt.scatter(filtered_df["bmi"], filtered_df["expenses"])
+            st.pyplot(plt.gcf()); plt.clf()
 
-    age_input = st.slider("Age",18,100,30)
-    bmi_input = st.slider("BMI",10.0,50.0,25.0)
+        st.subheader("🤖 Prediction")
 
-    if st.button("Predict"):
-        input_data = pd.DataFrame({
-            "age":[age_input],
-            "bmi":[bmi_input],
-            "children":[0],
-            "sex_male":[1],
-            "smoker_yes":[0],
-            "region_northwest":[0],
-            "region_southeast":[0],
-            "region_southwest":[0],
-        })
+        age_input = st.slider("Age",18,100,30)
+        bmi_input = st.slider("BMI",10.0,50.0,25.0)
 
-        input_data = input_data.reindex(columns=cols, fill_value=0)
-        input_scaled = scaler.transform(input_data)
-        pred = model.predict(input_scaled)[0]
+        if st.button("Predict"):
+            input_data = pd.DataFrame({
+                "age":[age_input],
+                "bmi":[bmi_input],
+                "children":[0],
+                "sex_male":[1],
+                "smoker_yes":[0],
+                "region_northwest":[0],
+                "region_southeast":[0],
+                "region_southwest":[0],
+            })
 
-        st.success(f"Estimated Expense: {round(pred,2)}")
+            input_data = input_data.reindex(columns=cols, fill_value=0)
+            input_scaled = scaler.transform(input_data)
+            pred = model.predict(input_scaled)[0]
+
+            st.success(f"Estimated Expense: {round(pred,2)}")
 
     if st.sidebar.button("Logout"):
         st.session_state.logged_in=False
