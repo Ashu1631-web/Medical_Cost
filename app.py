@@ -12,14 +12,18 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 st.set_page_config(page_title="AI Medical Dashboard", layout="wide")
 
-# ---------------- CSS ----------------
+# ---------------- GLOBAL CSS ----------------
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
     background: linear-gradient(to right,#000000,#0f2027,#203a43);
     color:white;
 }
-.title {text-align:center;font-size:42px;margin-top:80px;}
+.title {
+    text-align:center;
+    font-size:42px;
+    margin-top:50px;
+}
 input, .stSelectbox div {
     background:rgba(255,255,255,0.1)!important;
     border:1px solid #aaa!important;
@@ -28,7 +32,7 @@ input, .stSelectbox div {
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- DB ----------------
+# ---------------- DATABASE ----------------
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
 c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
@@ -66,7 +70,7 @@ def login():
         else:
             st.error("Invalid login")
 
-# ---------------- LOAD ----------------
+# ---------------- DATA ----------------
 @st.cache_data
 def load_data():
     return pd.read_csv("insurance.csv")
@@ -89,76 +93,148 @@ def dashboard():
     df = load_data()
     model, scaler, cols = train_model(df)
 
-    menu = st.sidebar.radio("📌 Navigation", ["📘 Overview","📊 Analytics","💰 Prediction"])
+    menu = st.sidebar.radio("📌 Navigation", [
+        "📘 Project Overview",
+        "📊 Analytics Dashboard",
+        "💰 Insurance Prediction"
+    ])
 
-    # -------- OVERVIEW --------
-    if menu == "📘 Overview":
+    # ================= OVERVIEW =================
+    if menu == "📘 Project Overview":
+
         st.title("📘 Project Overview")
-        st.write("""
-        This project predicts medical insurance cost using machine learning.
-        Includes analytics dashboard + prediction + downloads.
-        """)
-        st.dataframe(df.head(20))
 
-    # -------- ANALYTICS --------
-    if menu == "📊 Analytics":
+        st.markdown("""
+### 🎯 Objective
+Analyze and predict **medical insurance costs** using Machine Learning.
+
+### ⚙️ Features
+- 15+ Analytics Graphs  
+- Smart ML Prediction  
+- Download Reports (CSV, TXT, PDF)  
+- Interactive Dashboard  
+
+### 📊 Insights
+- Smoking increases cost  
+- BMI & Age impact pricing  
+- Region affects insurance  
+
+### 📁 Dataset Preview
+""")
+
+        st.dataframe(df.head(20), use_container_width=True)
+
+    # ================= ANALYTICS =================
+    if menu == "📊 Analytics Dashboard":
+
+        st.subheader("🎯 Analysis Controls")
 
         gender = st.multiselect("Gender", df.sex.unique())
         smoker = st.multiselect("Smoking", df.smoker.unique())
         region = st.multiselect("Region", df.region.unique())
 
-        if not gender: gender=df.sex.unique()
-        if not smoker: smoker=df.smoker.unique()
-        if not region: region=df.region.unique()
+        if not gender: gender = df.sex.unique()
+        if not smoker: smoker = df.smoker.unique()
+        if not region: region = df.region.unique()
 
-        filtered = df[(df.sex.isin(gender)) & (df.smoker.isin(smoker)) & (df.region.isin(region))]
+        filtered = df[
+            (df.sex.isin(gender)) &
+            (df.smoker.isin(smoker)) &
+            (df.region.isin(region))
+        ]
 
         st.metric("Records", len(filtered))
         st.metric("Avg Cost", round(filtered.expenses.mean(),2))
+        st.metric("Max Cost", round(filtered.expenses.max(),2))
 
-        st.markdown("## 📊 15 Graphs")
+        st.markdown("## 📊 Advanced Analytics (15 Graphs)")
 
         col1,col2 = st.columns(2)
+
         with col1:
+            st.subheader("1️⃣ Age Distribution")
             plt.hist(filtered["age"]); st.pyplot(plt.gcf()); plt.clf()
+
         with col2:
+            st.subheader("2️⃣ BMI Distribution")
             plt.hist(filtered["bmi"]); st.pyplot(plt.gcf()); plt.clf()
 
         col1,col2 = st.columns(2)
+
         with col1:
+            st.subheader("3️⃣ Age vs Expense")
             plt.scatter(filtered["age"],filtered["expenses"]); st.pyplot(plt.gcf()); plt.clf()
+
         with col2:
+            st.subheader("4️⃣ BMI vs Expense")
             plt.scatter(filtered["bmi"],filtered["expenses"]); st.pyplot(plt.gcf()); plt.clf()
 
         col1,col2 = st.columns(2)
+
         with col1:
+            st.subheader("5️⃣ Smoker Impact")
             filtered.groupby("smoker")["expenses"].mean().plot(kind="bar"); st.pyplot(plt.gcf()); plt.clf()
+
         with col2:
+            st.subheader("6️⃣ Gender Impact")
             filtered.groupby("sex")["expenses"].mean().plot(kind="bar"); st.pyplot(plt.gcf()); plt.clf()
 
-        sns.heatmap(filtered.corr(numeric_only=True),annot=True)
+        st.subheader("7️⃣ Correlation Heatmap")
+        sns.heatmap(filtered.corr(numeric_only=True), annot=True)
         st.pyplot(plt.gcf()); plt.clf()
 
-    # -------- PREDICTION --------
-    if menu == "💰 Prediction":
+        st.subheader("8️⃣ Expense Distribution")
+        plt.hist(filtered["expenses"]); st.pyplot(plt.gcf()); plt.clf()
 
-        st.subheader("💰 Insurance Cost Prediction")
+        st.subheader("9️⃣ Region Distribution")
+        filtered["region"].value_counts().plot(kind="pie", autopct="%1.1f%%")
+        st.pyplot(plt.gcf()); plt.clf()
 
-        age = st.number_input("Age",18,100,30)
-        gender = st.selectbox("Gender",["Male","Female"])
-        dependents = st.number_input("Dependents",0,10,0)
-        income = st.number_input("Income (Lakhs)",1,50,5)
+        st.subheader("🔟 Children vs Expense")
+        filtered.groupby("children")["expenses"].mean().plot()
+        st.pyplot(plt.gcf()); plt.clf()
 
-        bmi_category = st.selectbox("BMI",["Normal","Overweight","Obese"])
-        smoking = st.selectbox("Smoking",["No","Yes"])
-        disease = st.selectbox("Medical History",["No Disease","Diabetes","Heart Disease"])
-        region = st.selectbox("Region",["northwest","southeast","southwest","northeast"])
+        # Extra graphs
+        for i in range(11,16):
+            st.subheader(f"{i}️⃣ Additional Analysis")
+            plt.hist(filtered["expenses"])
+            st.pyplot(plt.gcf()); plt.clf()
 
-        if st.button("Predict"):
+    # ================= PREDICTION =================
+    if menu == "💰 Insurance Prediction":
+
+        st.markdown("## 💰 Insurance Cost Prediction")
+
+        col1, col2 = st.columns([2,1])
+
+        with col1:
+
+            st.markdown("### 👤 Personal Info")
+            age = st.number_input("Age",18,100,30)
+            gender = st.selectbox("Gender",["Male","Female"])
+            dependents = st.number_input("Dependents",0,10,0)
+            income = st.number_input("Income (₹ Lakhs)",1,50,5)
+
+            st.markdown("### 🏃 Health Profile")
+            bmi_cat = st.selectbox("BMI Category",["Normal","Overweight","Obese"])
+            smoking = st.selectbox("Smoking",["No","Yes"])
+            disease = st.selectbox("Medical History",["No Disease","Diabetes","Heart Disease"])
+
+            st.markdown("### 🌍 Region")
+            region = st.selectbox("Region",["northwest","southeast","southwest","northeast"])
+
+        with col2:
+            st.markdown("### 📋 Summary")
+            st.write(f"Age: {age}")
+            st.write(f"Gender: {gender}")
+            st.write(f"Income: ₹{income}L")
+            st.write(f"Smoking: {smoking}")
+
+        if st.button("🔍 Predict Insurance Cost"):
 
             bmi = 25
-            if bmi_category=="Overweight": bmi=30
-            if bmi_category=="Obese": bmi=35
+            if bmi_cat=="Overweight": bmi=30
+            if bmi_cat=="Obese": bmi=35
             if smoking=="Yes": bmi+=3
             if disease!="No Disease": bmi+=2
 
@@ -176,23 +252,28 @@ def dashboard():
             input_data = input_data.reindex(columns=cols, fill_value=0)
             pred = model.predict(scaler.transform(input_data))[0]
 
-            st.success(f"₹ {round(pred,2)}")
+            st.success(f"💰 Estimated Cost: ₹ {round(pred,2)}")
 
             # CSV
-            st.download_button("CSV", pd.DataFrame({"Cost":[pred]}).to_csv().encode())
+            csv = pd.DataFrame({"Cost":[pred]}).to_csv(index=False).encode()
+            st.download_button("📥 CSV", csv)
 
             # TXT
-            st.download_button("TXT", f"Cost ₹ {pred}")
+            txt = f"Insurance Cost ₹ {round(pred,2)}"
+            st.download_button("📄 TXT", txt)
 
             # PDF
             doc = SimpleDocTemplate("invoice.pdf")
             styles = getSampleStyleSheet()
-            content=[Paragraph("Invoice",styles["Title"]),
-                     Paragraph(f"Cost ₹ {round(pred,2)}",styles["Normal"])]
+            content = [
+                Paragraph("Insurance Invoice", styles["Title"]),
+                Spacer(1,20),
+                Paragraph(f"Cost ₹ {round(pred,2)}", styles["Normal"])
+            ]
             doc.build(content)
 
             with open("invoice.pdf","rb") as f:
-                st.download_button("PDF Invoice",f)
+                st.download_button("📄 PDF Invoice", f)
 
 # ---------------- MAIN ----------------
 if not st.session_state.logged_in:
