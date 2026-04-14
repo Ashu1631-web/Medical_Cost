@@ -56,7 +56,7 @@ def login():
     <style>
     [data-testid="stAppViewContainer"] {
         background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)),
-        url("https://images.unsplash.com/photo-1743767587687-9ebaac2b55e3");
+        url("https://wallpaperaccess.com/full/624111.jpg");
         background-size: cover;
         background-position: center;
     }
